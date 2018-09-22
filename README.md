@@ -9,9 +9,8 @@
    \                       | _   _   _  \
     `.                  ___|____________/
       ``````````````````
-```
+
 
       Unrecognized Bluetooth or USB device?
  Power unplugged, or battery removed while on AC?
- 
-                 Kill it! 
+                 Kill it!
