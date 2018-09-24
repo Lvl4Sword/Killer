@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = '0.1.3'
+__version__ = '0.1.3-1'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -98,8 +98,8 @@ if __name__ == '__main__':
         print('USB:')
         print(''.join(subprocess.check_output("lsusb", shell=False).decode('utf-8')))
         print('AC:')
-            with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
-                print(battery.readline().strip())
+            with open('/sys/class/power_supply/AC/online', 'r') as ac:
+                print(ac.readline().strip())
         print('Battery:')
             with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
                 print(battery.readline().strip())
