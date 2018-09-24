@@ -9,8 +9,12 @@
    \                       | _   _   _  \
     `.                  ___|____________/
       ``````````````````
+```
 
+```
+           System tamper detector
+  (USB, Bluetooth, AC, Battery, Disk Tray).
+ Shuts the system down upon disallowed changes.
 
-      Unrecognized Bluetooth or USB device?
- Power unplugged, or battery removed while on AC?
-                 Kill it!
+Looking for testers to support more than just Linux.
+```
