@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-__version__ = '0.1.2-1'
+__version__ = '0.1.3'
 __author__ = 'Lvl4Sword'
 
+import argparse
 import re
 import subprocess
 import time
@@ -87,9 +88,25 @@ def kill_the_system():
     subprocess.Popen(['/sbin/poweroff', '-f'])
 
 if __name__ == '__main__':
-    while True:
-        detect_bt()
-        detect_usb()
-        detect_ac()
-        detect_battery()
-        time.sleep(rest)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--debug", help="Prints USB/Bluetooth devices + AC/Battery status",
+                        action="store_true")
+    args = parser.parse_args()
+    if args.debug:
+        print('Bluetooth:')
+        print('\n'.join(subprocess.check_output(["bt-device", "--list"]).decode('utf-8').split('\n')[1:]))
+        print('USB:')
+        print(''.join(subprocess.check_output("lsusb", shell=False).decode('utf-8')))
+        print('AC:')
+            with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
+                print(battery.readline().strip())
+        print('Battery:')
+            with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
+                print(battery.readline().strip())
+    else:
+        while True:
+            detect_bt()
+            detect_usb()
+            detect_ac()
+            detect_battery()
+            time.sleep(rest)
