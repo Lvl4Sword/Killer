@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.6-1'
+__version__ = '0.1.6-2'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -63,7 +63,7 @@ BATTERY_FILE = '/sys/class/power_supply/BAT0/present'
 ### CD/DVD Tray
 CDROM_DRIVE = '/dev/sr0'
 
-rest = 2
+REST = 2
 
 def detect_bt():
     """detect_bt looks for paired MAC addresses,
@@ -183,5 +183,5 @@ if __name__ == '__main__':
             detect_usb()
             detect_ac()
             detect_battery()
-            detect_tray(cdrom_drive)
-            time.sleep(rest)
+            detect_tray(CDROM_DRIVE)
+            time.sleep(REST)
