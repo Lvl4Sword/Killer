@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = '0.1.4'
+__version__ = '0.1.4-1'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -132,4 +132,5 @@ if __name__ == '__main__':
             detect_usb()
             detect_ac()
             detect_battery()
+            detect_tray(cdrom_drive)
             time.sleep(rest)
