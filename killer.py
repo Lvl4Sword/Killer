@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = '0.1.2'
+__version__ = '0.1.2-1'
 __author__ = 'Lvl4Sword'
 
 import re
@@ -32,7 +32,7 @@ import time
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-# Regular expressions
+### Regular expressions
 bt_mac_regex = re.compile('(?:[0-9a-fA-F]:?){12}')
 bt_name_regex = re.compile('[0-9A-Za-z ]+(?=\s\()')
 bt_connected_regex = ('(Connected: [0-1])')
@@ -41,14 +41,13 @@ usb_id_regex = '([0-9a-fA-F]{4}:[0-9a-fA-F]{4})'
 ### Bluetooth
 bt_paired_whitelist = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
 bt_connected_whitelist = ['DE:AF:BE:EF:CA:FE']
-###
 
 ### USB
 usb_id_whitelist = ['DE:AF:BE:EF:CA:FE']
 
 rest = 2
 
-def detect_bluetooth():
+def detect_bt():
     bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
     paired_devices = re.findall(bt_mac_regex, bt_command)
     devices_names = re.findall(bt_name_regex, bt_command)
