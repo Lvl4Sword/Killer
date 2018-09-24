@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""
-
+"""If there are any unrecognized bluetooth or USB devices,
+laptop power is unplugged, laptop battery is removed while on AC,
+or the disk tray is tampered with, shut the computer down!
 """
 #         _  _  _  _ _
 #        | |/ /(_)| | |
@@ -29,7 +30,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -43,8 +44,8 @@ import time
 ### Regular expressions
 BT_MAC_REGEX = re.compile('(?:[0-9a-fA-F]:?){12}')
 BT_NAME_REGEX = re.compile('[0-9A-Za-z ]+(?=\s\()')
-BT_CONNECTED_REGEX = ('(Connected: [0-1])')
-USB_ID_REGEX = '([0-9a-fA-F]{4}:[0-9a-fA-F]{4})'
+BT_CONNECTED_REGEX = re.compile('(Connected: [0-1])')
+USB_ID_REGEX = re.compile('([0-9a-fA-F]{4}:[0-9a-fA-F]{4})')
 
 ### Bluetooth
 BT_PAIRED_WHITELIST = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
@@ -52,6 +53,12 @@ BT_CONNECTED_WHITELIST = ['DE:AF:BE:EF:CA:FE']
 
 ### USB
 USB_ID_WHITELIST = ['DE:AF:BE:EF:CA:FE']
+
+### AC
+AC_FILE = '/sys/class/power_supply/AC/online'
+
+### Battery
+BATTERY_FILE = '/sys/class/power_supply/BAT0/present'
 
 ### CD/DVD Tray
 CDROM_DRIVE = '/dev/sr0'
@@ -63,21 +70,25 @@ def detect_bt():
     names for paired devices, and connected status for devices.
     Two whitelists, one for paired, one for connected.
     """
-    bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
-    paired_devices = re.findall(BT_MAC_REGEX, bt_command)
-    devices_names = re.findall(BT_NAME_REGEX, bt_command)
-    for each in range(0, len(paired_devices)):
-        if paired_devices[each] not in BT_PAIRED_WHITELIST:
-            kill_the_system()
-        else:
-            connected = subprocess.check_output(["bt-device", "-i", paired_devices[each]],
-                                                 shell=False).decode('utf-8')
-            connected_text = re.findall(BT_CONNECTED_REGEX, connected)
-            if connected_text[0].endswith('1') and paired_devices[each] not in BT_CONNECTED_WHITELIST:
+    try:
+        bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
+    except IOError:
+        return
+    else:
+        paired_devices = re.findall(BT_MAC_REGEX, bt_command)
+        devices_names = re.findall(BT_NAME_REGEX, bt_command)
+        for each in range(0, len(paired_devices)):
+            if paired_devices[each] not in BT_PAIRED_WHITELIST:
                 kill_the_system()
-            elif connected_text[0].endswith('1') and each in BT_CONNECTED_WHITELIST:
-                if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
+            else:
+                connected = subprocess.check_output(["bt-device", "-i", paired_devices[each]],
+                                                     shell=False).decode('utf-8')
+                connected_text = re.findall(BT_CONNECTED_REGEX, connected)
+                if connected_text[0].endswith('1') and paired_devices[each] not in BT_CONNECTED_WHITELIST:
                     kill_the_system()
+                elif connected_text[0].endswith('1') and each in BT_CONNECTED_WHITELIST:
+                    if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
+                        kill_the_system()
 
 def detect_usb():
     """detect_usb finds all XXXX:XXX USB IDs connected to the system.
@@ -97,9 +108,9 @@ def detect_ac():
     1 = connected
     """
 
-    with open('/sys/class/power_supply/AC/online', 'r') as ac:
-        online = ac.readline().strip()
-        if online == '0':
+    with open(AC_FILE, 'r') as ac:
+        online = int(ac.readline().strip())
+        if online == 0:
             kill_the_system()
 
 def detect_battery():
@@ -109,10 +120,13 @@ def detect_battery():
     0 = not present
     1 = present
     """
-    with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
-        present = battery.readline().strip()
-        if present == '0':
-            kill_the_system()
+    try:
+        with open(BATTERY_FILE, 'r') as battery:
+            present = int(battery.readline().strip())
+            if present == 0:
+                kill_the_system()
+    except FileNotFoundError:
+        pass
 
 def detect_tray(CDROM_DRIVE):
     """detect_tray reads status of the CDROM_DRIVE.
