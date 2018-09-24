@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-__version__ = '0.1.4-1'
-__author__ = 'Lvl4Sword'
+"""
 
-import argparse
-import re
-import subprocess
-import time
-
+"""
 #         _  _  _  _ _
 #        | |/ /(_)| | |
 #        |   /  _ | | | ____ _ _
@@ -17,6 +12,7 @@ import time
 # \                       | _   _   _  \
 #  `.                  ___|____________/
 #    ``````````````````
+
 
 # <https://github.com/Lvl4Sword/Killer>
 #
@@ -33,96 +29,137 @@ import time
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
+__version__ = '0.1.5'
+__author__ = 'Lvl4Sword'
+
+import argparse
+import fcntl
+import os
+import re
+import subprocess
+import sys
+import time
+
 ### Regular expressions
-bt_mac_regex = re.compile('(?:[0-9a-fA-F]:?){12}')
-bt_name_regex = re.compile('[0-9A-Za-z ]+(?=\s\()')
-bt_connected_regex = ('(Connected: [0-1])')
-usb_id_regex = '([0-9a-fA-F]{4}:[0-9a-fA-F]{4})'
+BT_MAC_REGEX = re.compile('(?:[0-9a-fA-F]:?){12}')
+BT_NAME_REGEX = re.compile('[0-9A-Za-z ]+(?=\s\()')
+BT_CONNECTED_REGEX = ('(Connected: [0-1])')
+USB_ID_REGEX = '([0-9a-fA-F]{4}:[0-9a-fA-F]{4})'
 
 ### Bluetooth
-bt_paired_whitelist = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
-bt_connected_whitelist = ['DE:AF:BE:EF:CA:FE']
+BT_PAIRED_WHITELIST = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
+BT_CONNECTED_WHITELIST = ['DE:AF:BE:EF:CA:FE']
 
 ### USB
-usb_id_whitelist = ['DE:AF:BE:EF:CA:FE']
+USB_ID_WHITELIST = ['DE:AF:BE:EF:CA:FE']
 
 ### CD/DVD Tray
-cdrom_drive = '/dev/sr0'
+CDROM_DRIVE = '/dev/sr0'
 
 rest = 2
 
 def detect_bt():
+    """detect_bt looks for paired MAC addresses,
+    names for paired devices, and connected status for devices.
+    Two whitelists, one for paired, one for connected.
+    """
     bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
-    paired_devices = re.findall(bt_mac_regex, bt_command)
-    devices_names = re.findall(bt_name_regex, bt_command)
+    paired_devices = re.findall(BT_MAC_REGEX, bt_command)
+    devices_names = re.findall(BT_NAME_REGEX, bt_command)
     for each in range(0, len(paired_devices)):
-        if paired_devices[each] not in bt_paired_whitelist:
+        if paired_devices[each] not in BT_PAIRED_WHITELIST:
             kill_the_system()
         else:
             connected = subprocess.check_output(["bt-device", "-i", paired_devices[each]],
                                                  shell=False).decode('utf-8')
-            connected_text = re.findall(bt_connected_regex, connected)
-            if connected_text[0].endswith('1') and paired_devices[each] not in bt_connected_whitelist:
+            connected_text = re.findall(BT_CONNECTED_REGEX, connected)
+            if connected_text[0].endswith('1') and paired_devices[each] not in BT_CONNECTED_WHITELIST:
                 kill_the_system()
-            elif connected_text[0].endswith('1') and each in bt_connected_whitelist:
-                if not devices_names[each] == bt_paired_whitelist[each]:
+            elif connected_text[0].endswith('1') and each in BT_CONNECTED_WHITELIST:
+                if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
                     kill_the_system()
 
 def detect_usb():
-    ids = re.findall(usb_id_regex, subprocess.check_output("lsusb",
+    """detect_usb finds all XXXX:XXX USB IDs connected to the system.
+    This can include internal hardware as well.
+    """
+
+    ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
                                                             shell=False).decode('utf-8'))
     for each in ids:
-        if each not in usb_id_whitelist:
+        if each not in USB_ID_WHITELIST:
             kill_the_system()
 
-# 0 = disconnected
-# 1 = connected
 def detect_ac():
+    """detect_ac checks if the system is connected to AC power
+    Statuses:
+    0 = disconnected
+    1 = connected
+    """
+
     with open('/sys/class/power_supply/AC/online', 'r') as ac:
         online = ac.readline().strip()
         if online == '0':
             kill_the_system()
 
-# 0 = not present
-# 1 = present
 def detect_battery():
+    """detect_battery checks if there's a battery.
+    Obviously this doesn't matter if your system doesn't have a battery.
+    Statuses:
+    0 = not present
+    1 = present
+    """
     with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
         present = battery.readline().strip()
         if present == '0':
             kill_the_system()
 
-# 1 = no disk in tray
-# 2 = tray open
-# 3 = reading tray
-# 4 = disk in tray
-def detect_tray(cdrom_drive):
-    fd = os.open(cdrom_drive, os.O_RDONLY | os.O_NONBLOCK)
+def detect_tray(CDROM_DRIVE):
+    """detect_tray reads status of the CDROM_DRIVE.
+    Statuses:
+    1 = no disk in tray
+    2 = tray open
+    3 = reading tray
+    4 = disk in tray
+    """
+    fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
     rv = fcntl.ioctl(fd, 0x5326)
     os.close(fd)
     if rv != 1:
         kill_the_system()
 
 def kill_the_system():
+    """Shut the system down quickly"""
     subprocess.Popen(['/sbin/poweroff', '-f'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug", help="Prints all USB and Bluetooth devices",
+    parser.add_argument("-d", "--debug", help="Prints all info once, without worrying about shutdown.",
                         action="store_true")
     args = parser.parse_args()
     if args.debug:
         print('Bluetooth:')
-        print('\n'.join(subprocess.check_output(["bt-device", "--list"]).decode('utf-8').split('\n')[1:]))
+        try:
+            print('\n'.join(subprocess.check_output(["bt-device", "--list"]).decode('utf-8').split('\n')[1:]))
+        except IOError:
+            print('None detected\n')
+
         print('USB:')
         print(''.join(subprocess.check_output("lsusb", shell=False).decode('utf-8')))
+
         print('AC:')
-        with open('/sys/class/power_supply/AC/online', 'r') as battery:
-            print(battery.readline().strip())
+        with open('/sys/class/power_supply/AC/online', 'r') as ac:
+            print(ac.readline().strip())
+
         print('Battery:')
-        with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
-            print(battery.readline().strip())
+        try:
+            with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
+                print(battery.readline().strip())
+        except FileNotFoundError:
+            print('None detected\n')
+
         print('Disk Tray:')
-        fd = os.open(cdrom_drive, os.O_RDONLY | os.O_NONBLOCK)
+        fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
         rv = fcntl.ioctl(fd, 0x5326)
         os.close(fd)
         print(rv)
