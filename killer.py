@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.6'
+__version__ = '0.1.6-1'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -52,7 +52,7 @@ BT_PAIRED_WHITELIST = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
 BT_CONNECTED_WHITELIST = ['DE:AF:BE:EF:CA:FE']
 
 ### USB
-USB_ID_WHITELIST = ['DE:AF:BE:EF:CA:FE']
+USB_ID_WHITELIST = ['DE:AF:BE:EF']
 
 ### AC
 AC_FILE = '/sys/class/power_supply/AC/online'
