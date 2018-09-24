@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __author__ = 'Lvl4Sword'
 
 import re
@@ -32,37 +32,38 @@ import time
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-### Regular expressions
+# Regular expressions
 bt_mac_regex = re.compile('(?:[0-9a-fA-F]:?){12}')
+bt_name_regex = re.compile('[0-9A-Za-z ]+(?=\s\()')
 bt_connected_regex = ('(Connected: [0-1])')
 usb_id_regex = '([0-9a-fA-F]{4}:[0-9a-fA-F]{4})'
-###
 
 ### Bluetooth
-# Find the paired devices with bt-device --list
-bt_paired_whitelist = ['DE:AD:BE:EF:CA:FE']
-bt_connected_whitelist = ['DE:AD:BE:EF:CA:FE']
+bt_paired_whitelist = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
+bt_connected_whitelist = ['DE:AF:BE:EF:CA:FE']
 ###
 
 ### USB
-# Find the current devices by running lsusb
-usb_id_whitelist = ['DE:AD:BE:EF:CA:FE']
-###
+usb_id_whitelist = ['DE:AF:BE:EF:CA:FE']
 
 rest = 2
 
-def detect_bt():
-    paired_devices = re.findall(bt_mac_regex, subprocess.check_output(["bt-device", "--list"],
-                                                                        shell=False).decode('utf-8'))
-    for each in paired_devices:
-        if each not in bt_paired_whitelist:
-            subprocess.Popen(['/sbin/shutdown', '-h', 'now'])
+def detect_bluetooth():
+    bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
+    paired_devices = re.findall(bt_mac_regex, bt_command)
+    devices_names = re.findall(bt_name_regex, bt_command)
+    for each in range(0, len(paired_devices)):
+        if paired_devices[each] not in bt_paired_whitelist:
+            kill_the_system()
         else:
-            connected = subprocess.check_output(["bt-device", "-i", each],
+            connected = subprocess.check_output(["bt-device", "-i", paired_devices[each]],
                                                  shell=False).decode('utf-8')
             connected_text = re.findall(bt_connected_regex, connected)
-            if connected_text[0].endswith('1') and each not in bt_connected_whitelist:
+            if connected_text[0].endswith('1') and paired_devices[each] not in bt_connected_whitelist:
                 kill_the_system()
+            elif connected_text[0].endswith('1') and each in bt_connected_whitelist:
+                if not devices_names[each] == bt_paired_whitelist[each]:
+                    kill_the_system()
 
 def detect_usb():
     ids = re.findall(usb_id_regex, subprocess.check_output("lsusb",
