@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.6-2'
+__version__ = '0.1.6-3'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -52,7 +52,7 @@ BT_PAIRED_WHITELIST = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
 BT_CONNECTED_WHITELIST = ['DE:AF:BE:EF:CA:FE']
 
 ### USB
-USB_ID_WHITELIST = ['DE:AF:BE:EF']
+USB_ID_WHITELIST = ['DEAF:BEEF']
 
 ### AC
 AC_FILE = '/sys/class/power_supply/AC/online'
@@ -91,10 +91,9 @@ def detect_bt():
                         kill_the_system()
 
 def detect_usb():
-    """detect_usb finds all XXXX:XXX USB IDs connected to the system.
+    """detect_usb finds all XXXX:XXXX USB IDs connected to the system.
     This can include internal hardware as well.
     """
-
     ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
                                                             shell=False).decode('utf-8'))
     for each in ids:
@@ -107,7 +106,6 @@ def detect_ac():
     0 = disconnected
     1 = connected
     """
-
     with open(AC_FILE, 'r') as ac:
         online = int(ac.readline().strip())
         if online == 0:
