@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.6-3'
+__version__ = '0.1.7'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -62,6 +62,9 @@ BATTERY_FILE = '/sys/class/power_supply/BAT0/present'
 
 ### CD/DVD Tray
 CDROM_DRIVE = '/dev/sr0'
+
+### Ethernet connection
+ETHERNET_CONNECTED = "/sys/class/net/EDIT_THIS/carrier"
 
 REST = 2
 
@@ -140,6 +143,17 @@ def detect_tray(CDROM_DRIVE):
     if rv != 1:
         kill_the_system()
 
+def detect_ethernet():
+    """Check if an ethernet cord is connected.
+    Status:
+    0 = False
+    1 = True
+    """
+    with open(ETHERNET_CONNECTED, 'r') as ethernet:
+        connected = int(ethernet.readline().strip())
+        if connected == 0:
+            kill_the_system()
+
 def kill_the_system():
     """Shut the system down quickly"""
     subprocess.Popen(['/sbin/poweroff', '-f'])
@@ -175,6 +189,10 @@ if __name__ == '__main__':
         rv = fcntl.ioctl(fd, 0x5326)
         os.close(fd)
         print(rv)
+
+        print('Ethernet:')
+        with open(ETHERNET_CONNECTED, 'r') as ethernet:
+            print(int(ethernet.readline().strip()))
     else:
         while True:
             detect_bt()
@@ -182,4 +200,5 @@ if __name__ == '__main__':
             detect_ac()
             detect_battery()
             detect_tray(CDROM_DRIVE)
+            detect_ethernet()
             time.sleep(REST)
