@@ -12,9 +12,9 @@
 ```
 
 ```
-           System tamper detector
-  (USB, Bluetooth, AC, Battery, Disk Tray).
- Shuts the system down upon disallowed changes.
+            System tamper detector
+(USB, Bluetooth, AC, Battery, Disk Tray, Ethernet)
+  Shuts the system down upon disallowed changes.
 
 Looking for testers to support more than just Linux.
 ```
