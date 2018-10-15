@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 __author__ = 'Lvl4Sword'
 
 import argparse
@@ -51,6 +51,7 @@ BT_PAIRED_WHITELIST = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
 BT_CONNECTED_WHITELIST = ['DE:AF:BE:EF:CA:FE']
 
 ### USB
+# Windows' format is 8 digits without :
 USB_ID_WHITELIST = ['DEAF:BEEF']
 
 ### AC
@@ -65,6 +66,7 @@ CDROM_DRIVE = '/dev/sr0'
 ### Ethernet connection
 ETHERNET_CONNECTED = "/sys/class/net/EDIT_THIS/carrier"
 
+# If using windows, set this to 5 to ensure the USB powershell runs properly.
 REST = 2
 
 def detect_bt():
@@ -74,7 +76,8 @@ def detect_bt():
     """
     if sys.platform.startswith('linux'):
         try:
-            bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
+            bt_command = subprocess.check_output(["bt-device", "--list"],
+                                                  shell=False).decode('utf-8')
         except IOError:
             if args.debug:
                 print('None detected\n')
@@ -115,6 +118,14 @@ def detect_usb():
             for each in ids:
                 if each not in USB_ID_WHITELIST:
                     kill_the_system()
+    elif sys.platform.startswith('win'):
+        ps_command = """Get-WmiObject Win32_LogicalDisk -Filter 'DriveType=2' | ForEach-Object {
+                        $_ | Select-Object VolumeSerialNumber}"""
+        run_ps = subprocess.check_output(['powershell.exe', ps_command])
+        ps_split = run_ps.decode('utf-8').split('------------------')[1:]
+        for each in ps_split:
+            if each not in USB_ID_WHITELIST:
+                kill_the_system()
 
 def detect_ac():
     """detect_ac checks if the system is connected to AC power
@@ -123,12 +134,22 @@ def detect_ac():
     1 = connected
     """
     if sys.platform.startswith('linux'):
+        if args.debug:
+            ac_types = []
+            for each in os.listdir('/sys/class/power_supply'):
+            with open('/sys/class/power_supply/{0}/type'.format(each)) as power_file:
+                the_type = power_file.readline().strip()
+                if the_type == 'Mains':
+                    ac_types.append(each)
+            print('AC:')
+            if battery_types != []:
+                print(ac_types)
+            else:
+                print('None detected\n')
+
+    else:
         with open(AC_FILE, 'r') as ac:
             online = int(ac.readline().strip())
-        if args.debug:
-            print('AC:')
-            print(online)
-        else:
             if online == 0:
                 kill_the_system()
 
@@ -140,19 +161,25 @@ def detect_battery():
     1 = present
     """
     if sys.platform.startswith('linux'):
-        try:
-            with open(BATTERY_FILE, 'r') as battery:
-                present = int(battery.readline().strip())
-                if args.debug:
-                    print('Battery:')
-                    print(present)
-                else:
+        if args.debug:
+            battery_types = []
+            for each in os.listdir('/sys/class/power_supply'):
+                with open('/sys/class/power_supply/{0}/type'.format(each)) as power_file:
+                    the_type = power_file.readline().strip()
+                    if the_type == 'Battery':
+                        battery_types.append(each)
+            print('Battery:')
+            if battery_types != []:
+                print(battery_types)
+            else:
+                print('None detected\n')
+        else:
+            try:
+                with open(BATTERY_FILE, 'r') as battery:
+                    present = int(battery.readline().strip())
                     if present == 0:
                         kill_the_system()
-        except FileNotFoundError:
-            if args.debug:
-                print('None detected\n')
-            else:
+            except FileNotFoundError:
                 pass
 
 def detect_tray(CDROM_DRIVE):
