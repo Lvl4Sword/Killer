@@ -30,11 +30,10 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.7'
+__version__ = '0.1.8'
 __author__ = 'Lvl4Sword'
 
 import argparse
-import fcntl
 import os
 import re
 import subprocess
@@ -73,35 +72,49 @@ def detect_bt():
     names for paired devices, and connected status for devices.
     Two whitelists, one for paired, one for connected.
     """
-    try:
-        bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
-    except IOError:
-        return
-    else:
-        paired_devices = re.findall(BT_MAC_REGEX, bt_command)
-        devices_names = re.findall(BT_NAME_REGEX, bt_command)
-        for each in range(0, len(paired_devices)):
-            if paired_devices[each] not in BT_PAIRED_WHITELIST:
-                kill_the_system()
+    if sys.platform.startswith('linux'):
+        try:
+            bt_command = subprocess.check_output(["bt-device", "--list"], shell=False).decode('utf-8')
+        except IOError:
+            if args.debug:
+                print('None detected\n')
             else:
-                connected = subprocess.check_output(["bt-device", "-i", paired_devices[each]],
-                                                     shell=False).decode('utf-8')
-                connected_text = re.findall(BT_CONNECTED_REGEX, connected)
-                if connected_text[0].endswith('1') and paired_devices[each] not in BT_CONNECTED_WHITELIST:
-                    kill_the_system()
-                elif connected_text[0].endswith('1') and each in BT_CONNECTED_WHITELIST:
-                    if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
+                return
+        else:
+            if args.debug:
+                print('Bluetooth:')
+                print(bt_command)
+            else:
+                paired_devices = re.findall(BT_MAC_REGEX, bt_command)
+                devices_names = re.findall(BT_NAME_REGEX, bt_command)
+                for each in range(0, len(paired_devices)):
+                    if paired_devices[each] not in BT_PAIRED_WHITELIST:
                         kill_the_system()
+                    else:
+                        connected = subprocess.check_output(["bt-device", "-i",
+                                                             paired_devices[each]],
+                                                             shell=False).decode('utf-8')
+                        connected_text = re.findall(BT_CONNECTED_REGEX, connected)
+                        if connected_text[0].endswith('1') and paired_devices[each] not in BT_CONNECTED_WHITELIST:
+                            kill_the_system()
+                        elif connected_text[0].endswith('1') and each in BT_CONNECTED_WHITELIST:
+                            if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
+                                kill_the_system()
 
 def detect_usb():
     """detect_usb finds all XXXX:XXXX USB IDs connected to the system.
     This can include internal hardware as well.
     """
-    ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
-                                                            shell=False).decode('utf-8'))
-    for each in ids:
-        if each not in USB_ID_WHITELIST:
-            kill_the_system()
+    if sys.platform.startswith('linux'):
+        ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
+                                                               shell=False).decode('utf-8'))
+        if args.debug:
+            print('USB:')
+            print(ids)
+        else:
+            for each in ids:
+                if each not in USB_ID_WHITELIST:
+                    kill_the_system()
 
 def detect_ac():
     """detect_ac checks if the system is connected to AC power
@@ -109,10 +122,15 @@ def detect_ac():
     0 = disconnected
     1 = connected
     """
-    with open(AC_FILE, 'r') as ac:
-        online = int(ac.readline().strip())
-        if online == 0:
-            kill_the_system()
+    if sys.platform.startswith('linux'):
+        with open(AC_FILE, 'r') as ac:
+            online = int(ac.readline().strip())
+        if args.debug:
+            print('AC:')
+            print(online)
+        else:
+            if online == 0:
+                kill_the_system()
 
 def detect_battery():
     """detect_battery checks if there's a battery.
@@ -121,13 +139,21 @@ def detect_battery():
     0 = not present
     1 = present
     """
-    try:
-        with open(BATTERY_FILE, 'r') as battery:
-            present = int(battery.readline().strip())
-            if present == 0:
-                kill_the_system()
-    except FileNotFoundError:
-        pass
+    if sys.platform.startswith('linux'):
+        try:
+            with open(BATTERY_FILE, 'r') as battery:
+                present = int(battery.readline().strip())
+                if args.debug:
+                    print('Battery:')
+                    print(present)
+                else:
+                    if present == 0:
+                        kill_the_system()
+        except FileNotFoundError:
+            if args.debug:
+                print('None detected\n')
+            else:
+                pass
 
 def detect_tray(CDROM_DRIVE):
     """detect_tray reads status of the CDROM_DRIVE.
@@ -137,11 +163,17 @@ def detect_tray(CDROM_DRIVE):
     3 = reading tray
     4 = disk in tray
     """
-    fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
-    rv = fcntl.ioctl(fd, 0x5326)
-    os.close(fd)
-    if rv != 1:
-        kill_the_system()
+    if sys.platform.startswith('linux'):
+        import fcntl
+        fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
+        rv = fcntl.ioctl(fd, 0x5326)
+        os.close(fd)
+        if args.debug:
+            print('Disk Tray:')
+            print(rv)
+        else:
+            if rv != 1:
+                kill_the_system()
 
 def detect_ethernet():
     """Check if an ethernet cord is connected.
@@ -151,6 +183,10 @@ def detect_ethernet():
     """
     with open(ETHERNET_CONNECTED, 'r') as ethernet:
         connected = int(ethernet.readline().strip())
+    if args.debug:
+        print('Ethernet:')
+        print(connected)
+    else:
         if connected == 0:
             kill_the_system()
 
@@ -163,42 +199,14 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--debug", help="Prints all info once, without worrying about shutdown.",
                         action="store_true")
     args = parser.parse_args()
-    if args.debug:
-        print('Bluetooth:')
-        try:
-            print('\n'.join(subprocess.check_output(["bt-device", "--list"]).decode('utf-8').split('\n')[1:]))
-        except IOError:
-            print('None detected\n')
-
-        print('USB:')
-        print(''.join(subprocess.check_output("lsusb", shell=False).decode('utf-8')))
-
-        print('AC:')
-        with open('/sys/class/power_supply/AC/online', 'r') as ac:
-            print(ac.readline().strip())
-
-        print('Battery:')
-        try:
-            with open('/sys/class/power_supply/BAT0/present', 'r') as battery:
-                print(battery.readline().strip())
-        except FileNotFoundError:
-            print('None detected\n')
-
-        print('Disk Tray:')
-        fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
-        rv = fcntl.ioctl(fd, 0x5326)
-        os.close(fd)
-        print(rv)
-
-        print('Ethernet:')
-        with open(ETHERNET_CONNECTED, 'r') as ethernet:
-            print(int(ethernet.readline().strip()))
-    else:
-        while True:
-            detect_bt()
-            detect_usb()
-            detect_ac()
-            detect_battery()
-            detect_tray(CDROM_DRIVE)
-            detect_ethernet()
+    while True:
+        detect_bt()
+        detect_usb()
+        detect_ac()
+        detect_battery()
+        detect_tray(CDROM_DRIVE)
+        detect_ethernet()
+        if args.debug:
+            break
+        else:
             time.sleep(REST)
