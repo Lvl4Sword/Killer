@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -256,17 +256,20 @@ def detect_ethernet():
             if connected == 0:
                 kill_the_system()
     elif sys.platform.startswith("win"):
-        # This is unbareably slow.
-        net_interfaces = subprocess.check_output(["powershell.exe",
-                                                  "Get-NetAdapter | select Name, MacAddress, Status | ConvertTo-Json -Compress"])
-        json_interfaces = json.loads(net_interfaces)
-        for each in json_interfaces:
-            if args.debug:
-                print(each)
-            else:
-                if each["MacAddress"] == ETHERNET_INTERFACE:
-                    if each["Status"] == "Disconnected":
-                        kill_the_system()
+        for each in wmi.WMI().Win32_NetworkAdapter():
+            if x.NetworkConnectionStatus is not None:
+                if args.debug:
+                    # This can contain quite a few things
+                    # Including Ethernet, Bluetooth, and Wireless 
+                    print(x.Name)
+                    print(x.NetConnectionStatus)
+                    print(x.MacAddress)
+                else:
+                    if x.MacAddress == ETHERNET_INTERFACE:
+                        # This should probably be clearer, but for the time being:
+                        # https://github.com/Lvl4Sword/Killer/wiki/Windows-Connection-Status-Codes
+                        if x.NetConnectionStatus == 7:
+                            kill_the_system()
 
 def kill_the_system():
     """Shut the system down quickly"""
