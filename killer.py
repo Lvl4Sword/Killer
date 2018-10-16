@@ -30,8 +30,8 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.2.0'
-__author__ = 'Lvl4Sword'
+__version__ = "0.2.1"
+__author__ = "Lvl4Sword"
 
 import argparse
 import json
@@ -42,38 +42,36 @@ import sys
 import time
 
 ### Regular expressions
-BT_MAC_REGEX = re.compile('(?:[0-9a-fA-F]:?){12}')
-BT_NAME_REGEX = re.compile('[0-9A-Za-z ]+(?=\s\()')
-BT_CONNECTED_REGEX = re.compile('(Connected: [0-1])')
-USB_ID_REGEX = re.compile('([0-9a-fA-F]{4}:[0-9a-fA-F]{4})')
+BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
+BT_NAME_REGEX = re.compile("[0-9A-Za-z ]+(?=\s\()")
+BT_CONNECTED_REGEX = re.compile("(Connected: [0-1])")
+USB_ID_REGEX = re.compile("([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
 
 ### Bluetooth
-BT_PAIRED_WHITELIST = {'DE:AF:BE:EF:CA:FE': 'Generic Bluetooth Device'}
-BT_CONNECTED_WHITELIST = ['DE:AF:BE:EF:CA:FE']
+BT_PAIRED_WHITELIST = {"DE:AF:BE:EF:CA:FE": "Generic Bluetooth Device"}
+BT_CONNECTED_WHITELIST = ["DE:AF:BE:EF:CA:FE"]
 
 ### USB
 # Windows' format is 8 digits without :
-USB_ID_WHITELIST = ['DEAF:BEEF']
+USB_ID_WHITELIST = ["DEAF:BEEF"]
 
 ### AC
-AC_FILE = '/sys/class/power_supply/AC/online'
+AC_FILE = "/sys/class/power_supply/AC/online"
 
 ### Battery
-BATTERY_FILE = '/sys/class/power_supply/BAT0/present'
+BATTERY_FILE = "/sys/class/power_supply/BAT0/present"
 
 ### CD/DVD Tray
-CDROM_DRIVE = '/dev/sr0'
+CDROM_DRIVE = "/dev/sr0"
 
 ### Ethernet connection
-# If Windows, this isn't used. Go to ETHERNET_INTERFACE
+# If Windows, this is not used. Go to ETHERNET_INTERFACE
 ETHERNET_CONNECTED = "/sys/class/net/EDIT_THIS/carrier"
 
 # Windows-only. set to MAC address of the Ethernet interface
-ETHERNET_INTERFACE = 'DE-AD-BE-EF-CA-FE'
+ETHERNET_INTERFACE = "DE-AD-BE-EF-CA-FE"
 
-# TODO: Too slow!
-# If using windows, set this to 10 to ensure the USB and Ethernet
-# powershells runs properly.
+# If using windows, set this to 5 to ensure the USB powershell runs properly.
 REST = 2
 
 def detect_bt():
@@ -81,18 +79,18 @@ def detect_bt():
     names for paired devices, and connected status for devices.
     Two whitelists, one for paired, one for connected.
     """
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith("linux"):
         try:
             bt_command = subprocess.check_output(["bt-device", "--list"],
-                                                  shell=False).decode('utf-8')
+                                                  shell=False).decode("utf-8")
         except IOError:
             if args.debug:
-                print('None detected\n')
+                print("None detected\n")
             else:
                 return
         else:
             if args.debug:
-                print('Bluetooth:')
+                print("Bluetooth:")
                 print(bt_command)
             else:
                 paired_devices = re.findall(BT_MAC_REGEX, bt_command)
@@ -103,11 +101,11 @@ def detect_bt():
                     else:
                         connected = subprocess.check_output(["bt-device", "-i",
                                                              paired_devices[each]],
-                                                             shell=False).decode('utf-8')
+                                                             shell=False).decode("utf-8")
                         connected_text = re.findall(BT_CONNECTED_REGEX, connected)
-                        if connected_text[0].endswith('1') and paired_devices[each] not in BT_CONNECTED_WHITELIST:
+                        if connected_text[0].endswith("1") and paired_devices[each] not in BT_CONNECTED_WHITELIST:
                             kill_the_system()
-                        elif connected_text[0].endswith('1') and each in BT_CONNECTED_WHITELIST:
+                        elif connected_text[0].endswith("1") and each in BT_CONNECTED_WHITELIST:
                             if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
                                 kill_the_system()
 
@@ -115,23 +113,23 @@ def detect_usb():
     """detect_usb finds all XXXX:XXXX USB IDs connected to the system.
     This can include internal hardware as well.
     """
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith("linux"):
         ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
-                                                               shell=False).decode('utf-8'))
+                                                               shell=False).decode("utf-8"))
         if args.debug:
-            print('USB:')
+            print("USB:")
             print(ids)
         else:
             for each in ids:
                 if each not in USB_ID_WHITELIST:
                     kill_the_system()
-    elif sys.platform.startswith('win'):
-        ps_command = """Get-WmiObject Win32_LogicalDisk -Filter 'DriveType=2' | ForEach-Object {
+    elif sys.platform.startswith("win"):
+        ps_command = """Get-WmiObject Win32_LogicalDisk -Filter "DriveType=2" | ForEach-Object {
                         $_ | Select-Object VolumeSerialNumber}"""
-        run_ps = subprocess.check_output(['powershell.exe', ps_command])
-        ps_split = run_ps.decode('utf-8').split('------------------')[1:]
+        run_ps = subprocess.check_output(["powershell.exe", ps_command])
+        ps_split = run_ps.decode("utf-8").split("------------------")[1:]
         if args.debug:
-            print('USB:')
+            print("USB:")
         for each in ps_split:
             if args.debug:
                 print(each)
@@ -145,74 +143,89 @@ def detect_ac():
     0 = disconnected
     1 = connected
     """
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith("linux"):
         if args.debug:
             ac_types = []
-            for each in os.listdir('/sys/class/power_supply'):
-            with open('/sys/class/power_supply/{0}/type'.format(each)) as power_file:
+            for each in os.listdir("/sys/class/power_supply"):
+            with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
                 the_type = power_file.readline().strip()
-                if the_type == 'Mains':
+                if the_type == "Mains":
                     ac_types.append(each)
-            print('AC:')
+            print("AC:")
             if battery_types != []:
                 print(ac_types)
             else:
-                print('None detected\n')
+                print("None detected\n")
 
-    else:
-        with open(AC_FILE, 'r') as ac:
-            online = int(ac.readline().strip())
-            if online == 0:
-                kill_the_system()
+        else:
+            with open(AC_FILE, "r") as ac:
+                online = int(ac.readline().strip())
+                if online == 0:
+                    kill_the_system()
 
 def detect_battery():
-    """detect_battery checks if there's a battery.
-    Obviously this doesn't matter if your system doesn't have a battery.
+    """detect_battery checks if there is a battery.
+    Obviously this is useless if your system does not have a battery.
     Statuses:
     0 = not present
     1 = present
     """
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith("linux"):
         if args.debug:
             battery_types = []
-            for each in os.listdir('/sys/class/power_supply'):
-                with open('/sys/class/power_supply/{0}/type'.format(each)) as power_file:
+            for each in os.listdir("/sys/class/power_supply"):
+                with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
                     the_type = power_file.readline().strip()
-                    if the_type == 'Battery':
+                    if the_type == "Battery":
                         battery_types.append(each)
-            print('Battery:')
+            print("Battery:")
             if battery_types != []:
                 print(battery_types)
             else:
-                print('None detected\n')
+                print("None detected\n")
         else:
             try:
-                with open(BATTERY_FILE, 'r') as battery:
+                with open(BATTERY_FILE, "r") as battery:
                     present = int(battery.readline().strip())
                     if present == 0:
                         kill_the_system()
             except FileNotFoundError:
                 pass
 
-def detect_tray(CDROM_DRIVE):
-    """detect_tray reads status of the CDROM_DRIVE.
-    Statuses:
-    1 = no disk in tray
-    2 = tray open
-    3 = reading tray
-    4 = disk in tray
-    """
-    if sys.platform.startswith('linux'):
-        import fcntl
-        fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
-        rv = fcntl.ioctl(fd, 0x5326)
-        os.close(fd)
+def detect_power():
+    import ctypes
+    from ctypes import wintypes
+
+    class SYSTEM_POWER_STATUS(ctypes.Structure):
+        _fields_ = [
+            ('ACLineStatus', ctypes.c_ubyte),
+            ('BatteryFlag', ctypes.c_ubyte),
+        ]
+
+    SYSTEM_POWER_STATUS_P = ctypes.POINTER(SYSTEM_POWER_STATUS)
+
+    GetSystemPowerStatus = ctypes.windll.kernel32.GetSystemPowerStatus
+    GetSystemPowerStatus.argtypes = [SYSTEM_POWER_STATUS_P]
+    GetSystemPowerStatus.restype = wintypes.BOOL
+
+    status = SYSTEM_POWER_STATUS()
+    if not GetSystemPowerStatus(ctypes.pointer(status)):
+        raise ctypes.WinError()
+    else:
         if args.debug:
-            print('Disk Tray:')
-            print(rv)
+            print('ACLineStatus', status.ACLineStatus)
+            print('BatteryFlag', status.BatteryFlag)
         else:
-            if rv != 1:
+            if ('ACLineStatus', status.ACLineStatus) != 1:
+                # If not connected to power, shutdown
                 kill_the_system()
+            elif ('BatteryFlag', status.BatteryFlag) not in [0, 1, 2, 4, 8, 9, 10, 12]:
+                if ('BatteryFlag', status.BatteryFlag) == 128:
+                    # Battery not detected, so this is useless
+                    pass
+                else:
+                    # Battery is not connected, shut down
+                    kill_the_system()
 
 def detect_ethernet():
     """Check if an ethernet cord is connected.
@@ -243,7 +256,10 @@ def detect_ethernet():
 
 def kill_the_system():
     """Shut the system down quickly"""
-    subprocess.Popen(["/sbin/poweroff", "-f"])
+    if sys.platform.startswith('win'):
+         subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
+    else:
+        subprocess.Popen(["/sbin/poweroff", "-f"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
