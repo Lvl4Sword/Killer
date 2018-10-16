@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.2.2-1"
+__version__ = "0.2.3"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -40,6 +40,13 @@ import re
 import subprocess
 import sys
 import time
+
+if sys.platform.startswith('win'):
+    import wmi
+    import ctypes
+    from ctypes import wintypes
+elif sys.platform.startswith('linux'):
+    import fcntl
 
 ### Regular expressions
 BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
@@ -124,7 +131,6 @@ def detect_usb():
                 if each not in USB_ID_WHITELIST:
                     kill_the_system()
     elif sys.platform.startswith("win"):
-        import wmi
         if args.debug:
             print("USB:")
         for each in wmi.WMI().Win32_LogicalDisk():
@@ -189,10 +195,20 @@ def detect_battery():
             except FileNotFoundError:
                 pass
 
-def detect_power():
-    import ctypes
-    from ctypes import wintypes
+def detect_tray(CDROM_DRIVE):
+    """detect_tray reads status of the CDROM_DRIVE.
+    Statuses:
+    1 = no disk in tray
+    2 = tray open
+    3 = reading tray
+    4 = disk in tray
+    """
+    if sys.platform.startswith('linux'):
+        fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
+        rv = fcntl.ioctl(fd, 0x5326)
+        os.close(fd)
 
+def detect_power():
     class SYSTEM_POWER_STATUS(ctypes.Structure):
         _fields_ = [
             ('ACLineStatus', ctypes.c_ubyte),
@@ -240,6 +256,7 @@ def detect_ethernet():
             if connected == 0:
                 kill_the_system()
     elif sys.platform.startswith("win"):
+        # This is unbareably slow.
         net_interfaces = subprocess.check_output(["powershell.exe",
                                                   "Get-NetAdapter | select Name, MacAddress, Status | ConvertTo-Json -Compress"])
         json_interfaces = json.loads(net_interfaces)
