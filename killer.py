@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.2.2"
+__version__ = "0.2.2-1"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -144,10 +144,10 @@ def detect_ac():
         if args.debug:
             ac_types = []
             for each in os.listdir("/sys/class/power_supply"):
-            with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
-                the_type = power_file.readline().strip()
-                if the_type == "Mains":
-                    ac_types.append(each)
+                with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
+                    the_type = power_file.readline().strip()
+                    if the_type == "Mains":
+                        ac_types.append(each)
             print("AC:")
             if battery_types != []:
                 print(ac_types)
