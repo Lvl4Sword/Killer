@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -124,13 +124,10 @@ def detect_usb():
                 if each not in USB_ID_WHITELIST:
                     kill_the_system()
     elif sys.platform.startswith("win"):
-        ps_command = """Get-WmiObject Win32_LogicalDisk -Filter "DriveType=2" | ForEach-Object {
-                        $_ | Select-Object VolumeSerialNumber}"""
-        run_ps = subprocess.check_output(["powershell.exe", ps_command])
-        ps_split = run_ps.decode("utf-8").split("------------------")[1:]
+        import wmi
         if args.debug:
             print("USB:")
-        for each in ps_split:
+        for each in wmi.WMI().Win32_LogicalDisk():
             if args.debug:
                 print(each)
             else:
