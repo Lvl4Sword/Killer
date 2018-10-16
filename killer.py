@@ -30,10 +30,11 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = '0.1.9'
+__version__ = '0.2.0'
 __author__ = 'Lvl4Sword'
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -64,9 +65,15 @@ BATTERY_FILE = '/sys/class/power_supply/BAT0/present'
 CDROM_DRIVE = '/dev/sr0'
 
 ### Ethernet connection
+# If Windows, this isn't used. Go to ETHERNET_INTERFACE
 ETHERNET_CONNECTED = "/sys/class/net/EDIT_THIS/carrier"
 
-# If using windows, set this to 5 to ensure the USB powershell runs properly.
+# Windows-only. set to MAC address of the Ethernet interface
+ETHERNET_INTERFACE = 'DE-AD-BE-EF-CA-FE'
+
+# TODO: Too slow!
+# If using windows, set this to 10 to ensure the USB and Ethernet
+# powershells runs properly.
 REST = 2
 
 def detect_bt():
@@ -123,9 +130,14 @@ def detect_usb():
                         $_ | Select-Object VolumeSerialNumber}"""
         run_ps = subprocess.check_output(['powershell.exe', ps_command])
         ps_split = run_ps.decode('utf-8').split('------------------')[1:]
+        if args.debug:
+            print('USB:')
         for each in ps_split:
-            if each not in USB_ID_WHITELIST:
-                kill_the_system()
+            if args.debug:
+                print(each)
+            else:
+                if each not in USB_ID_WHITELIST:
+                    kill_the_system()
 
 def detect_ac():
     """detect_ac checks if the system is connected to AC power
@@ -208,20 +220,32 @@ def detect_ethernet():
     0 = False
     1 = True
     """
-    with open(ETHERNET_CONNECTED, 'r') as ethernet:
-        connected = int(ethernet.readline().strip())
-    if args.debug:
-        print('Ethernet:')
-        print(connected)
-    else:
-        if connected == 0:
-            kill_the_system()
+    if sys.platform.startswith("linux"):
+        with open(ETHERNET_CONNECTED, "r") as ethernet:
+            connected = int(ethernet.readline().strip())
+        if args.debug:
+            print("Ethernet:")
+            print(connected)
+        else:
+            if connected == 0:
+                kill_the_system()
+    elif sys.platform.startswith("win"):
+        net_interfaces = subprocess.check_output(["powershell.exe",
+                                                  "Get-NetAdapter | select Name, MacAddress, Status | ConvertTo-Json -Compress"])
+        json_interfaces = json.loads(net_interfaces)
+        for each in json_interfaces:
+            if args.debug:
+                print(each)
+            else:
+                if each["MacAddress"] == ETHERNET_INTERFACE:
+                    if each["Status"] == "Disconnected":
+                        kill_the_system()
 
 def kill_the_system():
     """Shut the system down quickly"""
-    subprocess.Popen(['/sbin/poweroff', '-f'])
+    subprocess.Popen(["/sbin/poweroff", "-f"])
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", help="Prints all info once, without worrying about shutdown.",
                         action="store_true")
