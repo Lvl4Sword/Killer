@@ -34,18 +34,30 @@ __version__ = "0.2.4"
 __author__ = "Lvl4Sword"
 
 import argparse
-import json
 import os
+import platform
 import re
 import subprocess
 import sys
 import time
 
-if sys.platform.startswith('win'):
+DEBUG = False
+
+# Determine what platform we're running
+WINDOWS = sys.platform.startswith('win32')
+LINUX = sys.platform.startswith('linux')
+OSX = sys.platform.startswith('darwin')
+BSD = OSX or 'bsd' in sys.platform
+POSIX = LINUX or BSD
+
+# Detect if we're running in Windows Subsystem for Linux (WSL)
+WSL = not WINDOWS and 'Microsoft' in platform.version()
+
+if WINDOWS:
     import wmi
     import ctypes
     from ctypes import wintypes
-elif sys.platform.startswith('linux'):
+elif POSIX:
     import fcntl
 
 ### Regular expressions
@@ -86,17 +98,17 @@ def detect_bt():
     names for paired devices, and connected status for devices.
     Two whitelists, one for paired, one for connected.
     """
-    if sys.platform.startswith("linux"):
+    if POSIX:
         try:
             bt_command = subprocess.check_output(["bt-device", "--list"],
                                                   shell=False).decode("utf-8")
         except IOError:
-            if args.debug:
+            if DEBUG:
                 print("None detected\n")
             else:
                 return
         else:
-            if args.debug:
+            if DEBUG:
                 print("Bluetooth:")
                 print(bt_command)
             else:
@@ -116,29 +128,31 @@ def detect_bt():
                             if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
                                 kill_the_system()
 
+
 def detect_usb():
     """detect_usb finds all XXXX:XXXX USB IDs connected to the system.
     This can include internal hardware as well.
     """
-    if sys.platform.startswith("linux"):
+    if POSIX:
         ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
                                                                shell=False).decode("utf-8"))
-        if args.debug:
+        if DEBUG:
             print("USB:")
             print(ids)
         else:
             for each in ids:
                 if each not in USB_ID_WHITELIST:
                     kill_the_system()
-    elif sys.platform.startswith("win"):
-        if args.debug:
+    elif WINDOWS:
+        if DEBUG:
             print("USB:")
         for each in wmi.WMI().Win32_LogicalDisk():
-            if args.debug:
+            if DEBUG:
                 print(each)
             else:
                 if each not in USB_ID_WHITELIST:
                     kill_the_system()
+
 
 def detect_ac():
     """detect_ac checks if the system is connected to AC power
@@ -146,8 +160,8 @@ def detect_ac():
     0 = disconnected
     1 = connected
     """
-    if sys.platform.startswith("linux"):
-        if args.debug:
+    if POSIX:
+        if DEBUG:
             ac_types = []
             for each in os.listdir("/sys/class/power_supply"):
                 with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
@@ -166,6 +180,7 @@ def detect_ac():
                 if online == 0:
                     kill_the_system()
 
+
 def detect_battery():
     """detect_battery checks if there is a battery.
     Obviously this is useless if your system does not have a battery.
@@ -173,8 +188,8 @@ def detect_battery():
     0 = not present
     1 = present
     """
-    if sys.platform.startswith("linux"):
-        if args.debug:
+    if POSIX:
+        if DEBUG:
             battery_types = []
             for each in os.listdir("/sys/class/power_supply"):
                 with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
@@ -195,6 +210,7 @@ def detect_battery():
             except FileNotFoundError:
                 pass
 
+
 def detect_tray(CDROM_DRIVE):
     """detect_tray reads status of the CDROM_DRIVE.
     Statuses:
@@ -203,10 +219,11 @@ def detect_tray(CDROM_DRIVE):
     3 = reading tray
     4 = disk in tray
     """
-    if sys.platform.startswith('linux'):
+    if POSIX:
         fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
         rv = fcntl.ioctl(fd, 0x5326)
         os.close(fd)
+
 
 def detect_power():
     class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -225,7 +242,7 @@ def detect_power():
     if not GetSystemPowerStatus(ctypes.pointer(status)):
         raise ctypes.WinError()
     else:
-        if args.debug:
+        if DEBUG:
             print('ACLineStatus', status.ACLineStatus)
             print('BatteryFlag', status.BatteryFlag)
         else:
@@ -240,25 +257,26 @@ def detect_power():
                     # Battery is not connected, shut down
                     kill_the_system()
 
+
 def detect_ethernet():
     """Check if an ethernet cord is connected.
     Status:
     0 = False
     1 = True
     """
-    if sys.platform.startswith("linux"):
+    if POSIX:
         with open(ETHERNET_CONNECTED, "r") as ethernet:
             connected = int(ethernet.readline().strip())
-        if args.debug:
+        if DEBUG:
             print("Ethernet:")
             print(connected)
         else:
             if connected == 0:
                 kill_the_system()
-    elif sys.platform.startswith("win"):
+    elif WINDOWS:
         for each in wmi.WMI().Win32_NetworkAdapter():
             if x.NetworkConnectionStatus is not None:
-                if args.debug:
+                if DEBUG:
                     # This can contain quite a few things
                     # Including Ethernet, Bluetooth, and Wireless 
                     print(x.Name)
@@ -271,18 +289,22 @@ def detect_ethernet():
                         if x.NetConnectionStatus == 7:
                             kill_the_system()
 
+
 def kill_the_system():
     """Shut the system down quickly"""
-    if sys.platform.startswith('win'):
-         subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
+    if WINDOWS:
+        subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
     else:
         subprocess.Popen(["/sbin/poweroff", "-f"])
 
-if __name__ == "__main__":
+
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug", help="Prints all info once, without worrying about shutdown.",
-                        action="store_true")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Prints all info once, without worrying about shutdown.")
     args = parser.parse_args()
+    global DEBUG
+    DEBUG = args.debug
     while True:
         detect_bt()
         detect_usb()
@@ -290,7 +312,11 @@ if __name__ == "__main__":
         detect_battery()
         detect_tray(CDROM_DRIVE)
         detect_ethernet()
-        if args.debug:
+        if DEBUG:
             break
         else:
             time.sleep(REST)
+
+
+if __name__ == "__main__":
+    main()
