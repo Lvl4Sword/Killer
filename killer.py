@@ -29,7 +29,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -303,8 +303,8 @@ class Killer(object):
         conn.esmtp_features['auth'] = login_auth
         conn.login(sender, sender_password)
         try:
-            for each in destination:
-                conn.sendmail(sender, each, msg.as_string())
+            for each in self.config['email']['DESTINATION'].split(','):
+                conn.sendmail(sender, each.strip(), msg.as_string())
         finally:
             conn.quit()
 
@@ -320,7 +320,7 @@ if __name__ == "__main__":
             execute.detect_power()
         elif sys.platform.startswith("linux"):
             execute.detect_bt()
-#            execute.detect_ac()
+            execute.detect_ac()
             execute.detect_battery()
             execute.detect_tray(execute.config['linux']['CDROM_DRIVE'])
         execute.detect_usb()
