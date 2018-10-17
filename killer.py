@@ -29,7 +29,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -81,17 +81,17 @@ class Killer(object):
                     paired_devices = re.findall(self.config['linux']['BT_MAC_REGEX'], bt_command)
                     devices_names = re.findall(self.config['linux']['BT_NAME_REGEX'], bt_command)
                     for each in range(0, len(paired_devices)):
-                        if paired_devices[each] not in self.config['linux']['BT_PAIRED_WHITELIST']:
+                        if paired_devices[each] not in json.loads(self.config['linux']['BT_PAIRED_WHITELIST']):
                             self.kill_the_system('Bluetooth Paired')
                         else:
                             connected = subprocess.check_output(["bt-device", "-i",
                                                                  paired_devices[each]],
                                                                  shell=False).decode("utf-8")
                             connected_text = re.findall(self.config['linux']['BT_CONNECTED_REGEX'], connected)
-                            if connected_text[0].endswith("1") and paired_devices[each] not in self.config['linux']['BT_CONNECTED_WHITELIST']:
+                            if connected_text[0].endswith("1") and paired_devices[each] not in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
                                 self.kill_the_system('Bluetooth Connected MAC Disallowed')
-                            elif connected_text[0].endswith("1") and each in self.config['linux']['BT_CONNECTED_WHITELIST']:
-                                if not devices_names[each] == self.config['linux']['BT_PAIRED_WHITELIST'][each]:
+                            elif connected_text[0].endswith("1") and each in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
+                                if not devices_names[each] == json.loads(self.config['linux']['BT_PAIRED_WHITELIST'])[each]:
                                     self.kill_the_system('Bluetooth Connected Name Mismatch')
 
     def detect_usb():
@@ -106,9 +106,9 @@ class Killer(object):
                 print(', '.join(ids))
             else:
                 for each_device in ids:
-                    if each_device not in self.config['linux']['USB_ID_WHITELIST']:
+                    if each_device not in json.loads(self.config['linux']['USB_ID_WHITELIST']):
                         self.kill_the_system('USB Allowed Whitelist')
-                for device in self.config['linux']['USB_CONNECTED_WHITELIST']:
+                for device in json.loads(self.config['linux']['USB_CONNECTED_WHITELIST']):
                     if device not in ids:
                         self.kill_the_system('USB Connected Whitelist')
         elif sys.platform.startswith("win"):
@@ -303,8 +303,8 @@ class Killer(object):
         conn.esmtp_features['auth'] = login_auth
         conn.login(sender, sender_password)
         try:
-            for each in self.config['email']['DESTINATION'].split(','):
-                conn.sendmail(sender, each.strip(), msg.as_string())
+            for each in json.loads(self.config['email']['DESTINATION']):
+                conn.sendmail(sender, each, msg.as_string())
         finally:
             conn.quit()
 
