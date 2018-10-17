@@ -29,7 +29,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -239,7 +239,7 @@ class Killer(object):
                 print("Ethernet:")
                 print(connected)
             else:
-                if connected == 1:
+                if connected:
                     self.kill_the_system('Ethernet')
         elif sys.platform.startswith("win"):
             for each in wmi.WMI().Win32_NetworkAdapter():
@@ -266,7 +266,7 @@ class Killer(object):
         except socket.gaierror:
             current_time = time.localtime()
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
-            with open('/home/user/Desktop/KILLER.txt', 'a') as killer_file:
+            with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
                 killer_file.write('Time: {0}\nInternet is out.\nFailure: {0}'.format(formatted_time, warning))
         if sys.platform.startswith('win'):
              subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
