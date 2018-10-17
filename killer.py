@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -137,8 +137,9 @@ def detect_usb():
             if args.debug:
                 print(each)
             else:
-                if each not in USB_ID_WHITELIST:
-                    kill_the_system()
+                if each.Description == 'Removable Disk':
+                    if each not in USB_ID_WHITELIST:
+                        kill_the_system()
 
 def detect_ac():
     """detect_ac checks if the system is connected to AC power
