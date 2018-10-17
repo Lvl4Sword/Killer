@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -62,6 +62,10 @@ BT_CONNECTED_WHITELIST = ["DE:AF:BE:EF:CA:FE"]
 # Windows' format is 8 digits without :
 USB_ID_WHITELIST = ["DEAF:BEEF"]
 
+# USB devices that must be connected at all times, otherwise
+# shut the system down. Must also be in USB_ID_WHITELIST
+USB_CONNECTED_WHITELIST = []
+
 ### AC
 AC_FILE = "/sys/class/power_supply/AC/online"
 
@@ -78,7 +82,6 @@ ETHERNET_CONNECTED = "/sys/class/net/EDIT_THIS/carrier"
 # Windows-only. set to MAC address of the Ethernet interface
 ETHERNET_INTERFACE = "DE-AD-BE-EF-CA-FE"
 
-# If using windows, set this to 5 to ensure the USB powershell runs properly.
 REST = 2
 
 def detect_bt():
@@ -125,21 +128,30 @@ def detect_usb():
                                                                shell=False).decode("utf-8"))
         if args.debug:
             print("USB:")
-            print(ids)
+            print(', '.join(ids))
         else:
-            for each in ids:
-                if each not in USB_ID_WHITELIST:
+            for each_device in ids:
+                if each_device not in USB_ID_WHITELIST:
+                    kill_the_system()
+            for device in USB_CONNECTED_WHITELIST:
+                if device not in ids:
                     kill_the_system()
     elif sys.platform.startswith("win"):
+        ids = []
         if args.debug:
             print("USB:")
         for each in wmi.WMI().Win32_LogicalDisk():
-            if args.debug:
-                print(each)
-            else:
-                if each.Description == 'Removable Disk':
-                    if each not in USB_ID_WHITELIST:
-                        kill_the_system()
+            if each.Description == 'Removable Disk':
+                ids.append(each.VolumeSerialNumber)
+        if args.debug:
+            print(', '.join(ids))
+        else:
+            for each_device in ids:
+                if each_device not in USB_ID_WHITELIST:
+                    kill_the_system()
+            for device in USB_CONNECTED_WHITELIST:
+                if device not in ids:
+                    kill_the_system()
 
 def detect_ac():
     """detect_ac checks if the system is connected to AC power
@@ -164,7 +176,7 @@ def detect_ac():
             with open(AC_FILE, "r") as ac:
                 online = int(ac.readline().strip())
                 if online == 0:
-                    kill_the_system()       
+                    kill_the_system()
 
 def detect_battery():
     """detect_battery checks if there is a battery.
