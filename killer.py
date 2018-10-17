@@ -60,30 +60,30 @@ if WINDOWS:
 elif POSIX:
     import fcntl
 
-### Regular expressions
+# Regular expressions
 BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
 BT_NAME_REGEX = re.compile("[0-9A-Za-z ]+(?=\s\()")
 BT_CONNECTED_REGEX = re.compile("(Connected: [0-1])")
 USB_ID_REGEX = re.compile("([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
 
-### Bluetooth
+# Bluetooth
 BT_PAIRED_WHITELIST = {"DE:AF:BE:EF:CA:FE": "Generic Bluetooth Device"}
 BT_CONNECTED_WHITELIST = ["DE:AF:BE:EF:CA:FE"]
 
-### USB
+# USB
 # Windows' format is 8 digits without :
 USB_ID_WHITELIST = ["DEAF:BEEF"]
 
-### AC
+# AC
 AC_FILE = "/sys/class/power_supply/AC/online"
 
-### Battery
+# Battery
 BATTERY_FILE = "/sys/class/power_supply/BAT0/present"
 
-### CD/DVD Tray
+# CD/DVD Tray
 CDROM_DRIVE = "/dev/sr0"
 
-### Ethernet connection
+# Ethernet connection
 # If Windows, this is not used. Go to ETHERNET_INTERFACE
 ETHERNET_CONNECTED = "/sys/class/net/EDIT_THIS/carrier"
 
@@ -93,6 +93,7 @@ ETHERNET_INTERFACE = "DE-AD-BE-EF-CA-FE"
 # If using windows, set this to 5 to ensure the USB powershell runs properly.
 REST = 2
 
+
 def detect_bt():
     """detect_bt looks for paired MAC addresses,
     names for paired devices, and connected status for devices.
@@ -101,7 +102,7 @@ def detect_bt():
     if POSIX:
         try:
             bt_command = subprocess.check_output(["bt-device", "--list"],
-                                                  shell=False).decode("utf-8")
+                                                 shell=False).decode()
         except IOError:
             if DEBUG:
                 print("None detected\n")
@@ -120,11 +121,13 @@ def detect_bt():
                     else:
                         connected = subprocess.check_output(["bt-device", "-i",
                                                              paired_devices[each]],
-                                                             shell=False).decode("utf-8")
+                                                             shell=False).decode()
                         connected_text = re.findall(BT_CONNECTED_REGEX, connected)
-                        if connected_text[0].endswith("1") and paired_devices[each] not in BT_CONNECTED_WHITELIST:
+                        if connected_text[0].endswith("1") \
+                                and paired_devices[each] not in BT_CONNECTED_WHITELIST:
                             kill_the_system()
-                        elif connected_text[0].endswith("1") and each in BT_CONNECTED_WHITELIST:
+                        elif connected_text[0].endswith("1") \
+                                and each in BT_CONNECTED_WHITELIST:
                             if not devices_names[each] == BT_PAIRED_WHITELIST[each]:
                                 kill_the_system()
 
@@ -134,8 +137,8 @@ def detect_usb():
     This can include internal hardware as well.
     """
     if POSIX:
-        ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
-                                                               shell=False).decode("utf-8"))
+        ids = re.findall(USB_ID_REGEX,
+                         subprocess.check_output("lsusb", shell=False).decode())
         if DEBUG:
             print("USB:")
             print(ids)
@@ -169,13 +172,13 @@ def detect_ac():
                     if the_type == "Mains":
                         ac_types.append(each)
             print("AC:")
-            if battery_types != []:
+            if ac_types:
                 print(ac_types)
             else:
                 print("None detected\n")
 
         else:
-            with open(AC_FILE, "r") as ac:
+            with open(AC_FILE) as ac:
                 online = int(ac.readline().strip())
                 if online == 0:
                     kill_the_system()
@@ -197,13 +200,13 @@ def detect_battery():
                     if the_type == "Battery":
                         battery_types.append(each)
             print("Battery:")
-            if battery_types != []:
+            if battery_types:
                 print(battery_types)
             else:
                 print("None detected\n")
         else:
             try:
-                with open(BATTERY_FILE, "r") as battery:
+                with open(BATTERY_FILE) as battery:
                     present = int(battery.readline().strip())
                     if present == 0:
                         kill_the_system()
@@ -211,7 +214,7 @@ def detect_battery():
                 pass
 
 
-def detect_tray(CDROM_DRIVE):
+def detect_tray(drive=CDROM_DRIVE):
     """detect_tray reads status of the CDROM_DRIVE.
     Statuses:
     1 = no disk in tray
@@ -220,7 +223,7 @@ def detect_tray(CDROM_DRIVE):
     4 = disk in tray
     """
     if POSIX:
-        fd = os.open(CDROM_DRIVE, os.O_RDONLY | os.O_NONBLOCK)
+        fd = os.open(drive, os.O_RDONLY | os.O_NONBLOCK)
         rv = fcntl.ioctl(fd, 0x5326)
         os.close(fd)
 
@@ -265,7 +268,7 @@ def detect_ethernet():
     1 = True
     """
     if POSIX:
-        with open(ETHERNET_CONNECTED, "r") as ethernet:
+        with open(ETHERNET_CONNECTED) as ethernet:
             connected = int(ethernet.readline().strip())
         if DEBUG:
             print("Ethernet:")
@@ -274,7 +277,7 @@ def detect_ethernet():
             if connected == 0:
                 kill_the_system()
     elif WINDOWS:
-        for each in wmi.WMI().Win32_NetworkAdapter():
+        for x in wmi.WMI().Win32_NetworkAdapter():
             if x.NetworkConnectionStatus is not None:
                 if DEBUG:
                     # This can contain quite a few things
