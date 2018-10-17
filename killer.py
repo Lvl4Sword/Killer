@@ -1,6 +1,6 @@
 """If there are any unrecognized bluetooth or USB devices,
 laptop power is unplugged, laptop battery is removed while on AC,
-or the disk tray is tampered with, shut the computer down!
+or disk tray/ethernet is tampered with, shut the computer down!
 """
 #         _  _  _  _ _
 #        | |/ /(_)| | |
@@ -29,7 +29,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.3.8"
+__version__ = "0.3.9"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -81,7 +81,12 @@ class Killer(object):
             else:
                 if args.debug:
                     print("Bluetooth:")
-                    print(bt_command)
+                    bt_devices = bt_command.split('\n')
+                    if len(bt_devices) == 3 and bt_devices[2] == '':
+                        print(bt_command.split('\n')[1])
+                    else:
+                        print(', '.join(bt_command.split('\n')[1:]))
+                    print()
                 else:
                     paired_devices = re.findall(BT_MAC_REGEX, bt_command)
                     devices_names = re.findall(BT_NAME_REGEX, bt_command)
@@ -109,6 +114,7 @@ class Killer(object):
             if args.debug:
                 print("USB:")
                 print(', '.join(ids))
+                print()
             else:
                 for each_device in ids:
                     if each_device not in json.loads(self.config['linux']['USB_ID_WHITELIST']):
@@ -125,6 +131,7 @@ class Killer(object):
                     ids.append(each.VolumeSerialNumber)
             if args.debug:
                 print(', '.join(ids))
+                print()
             else:
                 for each_device in ids:
                     if each_device not in self.config['windows']['USB_ID_WHITELIST']:
@@ -148,8 +155,12 @@ class Killer(object):
                         if the_type == "Mains":
                             ac_types.append(each)
                 print("AC:")
-                if battery_types != []:
-                    print(ac_types)
+                if ac_types != []:
+                    if len(ac_types) >= 2:
+                        print(', '.join(ac_types))
+                    elif len(ac_types) == 1:
+                        print(ac_types[0])
+                    print()
                 else:
                     print("None detected\n")
             else:
@@ -175,7 +186,11 @@ class Killer(object):
                             battery_types.append(each)
                 print("Battery:")
                 if battery_types != []:
-                    print(battery_types)
+                    if len(battery_types) >= 2:
+                        print(', '.join(battery_types))
+                    elif len(battery_types) == 1:
+                        print(battery_types[0])
+                    print()
                 else:
                     print("None detected\n")
             else:
@@ -200,9 +215,13 @@ class Killer(object):
             fd = os.open(disk_tray, os.O_RDONLY | os.O_NONBLOCK)
             rv = fcntl.ioctl(fd, 0x5326)
             os.close(fd)
-            print(rv)
-            if rv != 1:
-                self.kill_the_system('CD Tray')
+            if args.debug:
+                print('CD Tray:')
+                print(rv)
+                print()
+            else:
+                if rv != 1:
+                    self.kill_the_system('CD Tray')
 
     def detect_power(self):
         class SYSTEM_POWER_STATUS(ctypes.Structure):
@@ -221,8 +240,10 @@ class Killer(object):
             raise ctypes.WinError()
         else:
             if args.debug:
+                print('Power:')
                 print('ACLineStatus', status.ACLineStatus)
                 print('BatteryFlag', status.BatteryFlag)
+                print()
             else:
                 if ('ACLineStatus', status.ACLineStatus) != 1:
                     # If not connected to power, shutdown
