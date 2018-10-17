@@ -30,7 +30,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -159,12 +159,11 @@ def detect_ac():
                 print(ac_types)
             else:
                 print("None detected\n")
-
         else:
             with open(AC_FILE, "r") as ac:
                 online = int(ac.readline().strip())
                 if online == 0:
-                    kill_the_system()
+                    kill_the_system()       
 
 def detect_battery():
     """detect_battery checks if there is a battery.
@@ -194,6 +193,13 @@ def detect_battery():
                         kill_the_system()
             except FileNotFoundError:
                 pass
+    elif sys.platform.startswith("win"):
+        for x in wmi.WMI().Win32_Battery():
+            if args.debug:
+                print(x)
+            else:
+                # TODO - Need to do more testing for a removed battery
+                print(x)
 
 def detect_tray(CDROM_DRIVE):
     """detect_tray reads status of the CDROM_DRIVE.
