@@ -1,0 +1,5 @@
+setuptools>=38.6.0
+wheel
+twine
+better_exceptions
+pudb;platform_system=="Linux"
