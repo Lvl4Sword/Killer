@@ -29,7 +29,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.3.3"
+__version__ = "0.3.7"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -53,11 +53,16 @@ if sys.platform.startswith('win'):
 elif sys.platform.startswith('linux'):
     import fcntl
 
+BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
+BT_NAME_REGEX = re.compile("[0-9A-Za-z ]+(?=\s\()")
+BT_CONNECTED_REGEX = re.compile("(Connected: [0-1])")
+USB_ID_REGEX = re.compile("([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
+
 
 class Killer(object):
     def __init__(self):
         self.config = configparser.ConfigParser()
-        self.config.read('/change/this/killer.conf')
+        self.config.read('/root/scripts/killer.conf')
 
     def detect_bt(self):
         """detect_bt looks for paired MAC addresses,
@@ -78,8 +83,8 @@ class Killer(object):
                     print("Bluetooth:")
                     print(bt_command)
                 else:
-                    paired_devices = re.findall(self.config['linux']['BT_MAC_REGEX'], bt_command)
-                    devices_names = re.findall(self.config['linux']['BT_NAME_REGEX'], bt_command)
+                    paired_devices = re.findall(BT_MAC_REGEX, bt_command)
+                    devices_names = re.findall(BT_NAME_REGEX, bt_command)
                     for each in range(0, len(paired_devices)):
                         if paired_devices[each] not in json.loads(self.config['linux']['BT_PAIRED_WHITELIST']):
                             self.kill_the_system('Bluetooth Paired')
@@ -87,20 +92,20 @@ class Killer(object):
                             connected = subprocess.check_output(["bt-device", "-i",
                                                                  paired_devices[each]],
                                                                  shell=False).decode("utf-8")
-                            connected_text = re.findall(self.config['linux']['BT_CONNECTED_REGEX'], connected)
+                            connected_text = re.findall(BT_CONNECTED_REGEX, connected)
                             if connected_text[0].endswith("1") and paired_devices[each] not in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
                                 self.kill_the_system('Bluetooth Connected MAC Disallowed')
                             elif connected_text[0].endswith("1") and each in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
                                 if not devices_names[each] == json.loads(self.config['linux']['BT_PAIRED_WHITELIST'])[each]:
                                     self.kill_the_system('Bluetooth Connected Name Mismatch')
 
-    def detect_usb():
+    def detect_usb(self):
         """detect_usb finds all XXXX:XXXX USB IDs connected to the system.
         This can include internal hardware as well.
         """
         if sys.platform.startswith("linux"):
-            ids = re.findall(self.config['linux']['USB_ID_REGEX'], subprocess.check_output("lsusb",
-                                                                   shell=False).decode("utf-8"))
+            ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
+                                                                    shell=False).decode("utf-8"))
             if args.debug:
                 print("USB:")
                 print(', '.join(ids))
@@ -124,11 +129,11 @@ class Killer(object):
                 for each_device in ids:
                     if each_device not in self.config['windows']['USB_ID_WHITELIST']:
                         self.kill_the_system('USB Allowed Whitelist')
-                for device in self.config['windows'][USB_CONNECTED_WHITELIST']:
+                for device in self.config['windows']['USB_CONNECTED_WHITELIST']:
                     if device not in ids:
                         self.kill_the_system('USB Connected Whitelist')
 
-    def detect_ac():
+    def detect_ac(self):
         """detect_ac checks if the system is connected to AC power
         Statuses:
         0 = disconnected
@@ -153,7 +158,7 @@ class Killer(object):
                     if not online:
                         self.kill_the_system('AC')
 
-    def detect_battery():
+    def detect_battery(self):
         """detect_battery checks if there is a battery.
         Obviously this is useless if your system does not have a battery.
         Statuses:
@@ -182,7 +187,7 @@ class Killer(object):
                 except FileNotFoundError:
                     pass
 
-    def detect_tray(self.config['linux']['CDROM_DRIVE']):
+    def detect_tray(self):
         """detect_tray reads status of the CDROM_DRIVE.
         Statuses:
         1 = no disk in tray
@@ -191,11 +196,15 @@ class Killer(object):
         4 = disk in tray
         """
         if sys.platform.startswith('linux'):
-            fd = os.open(self.config['linux']['CDROM_DRIVE'], os.O_RDONLY | os.O_NONBLOCK)
+            disk_tray = self.config['linux']['CDROM_DRIVE']
+            fd = os.open(disk_tray, os.O_RDONLY | os.O_NONBLOCK)
             rv = fcntl.ioctl(fd, 0x5326)
             os.close(fd)
+            print(rv)
+            if rv != 1:
+                self.kill_the_system('CD Tray')
 
-    def detect_power():
+    def detect_power(self):
         class SYSTEM_POWER_STATUS(ctypes.Structure):
             _fields_ = [
                 ('ACLineStatus', ctypes.c_ubyte),
@@ -226,7 +235,7 @@ class Killer(object):
                         # Battery is not connected, shut down
                         self.kill_the_system('Battery')
 
-    def detect_ethernet():
+    def detect_ethernet(self):
         """Check if an ethernet cord is connected.
         Status:
         0 = False
@@ -246,7 +255,7 @@ class Killer(object):
                 if x.NetworkConnectionStatus is not None:
                     if args.debug:
                         # This can contain quite a few things
-                        # Including Ethernet, Bluetooth, and Wireless 
+                        # Including Ethernet, Bluetooth, and Wireless
                         print(x.Name)
                         print(x.NetConnectionStatus)
                         print(x.MacAddress)
@@ -257,23 +266,23 @@ class Killer(object):
                             if x.NetConnectionStatus == 7:
                                 self.kill_the_system('Ethernet')
 
-    def kill_the_system(warning):
+    def kill_the_system(self, warning):
         """Send an e-mail, and then
         shut the system down quickly.
         """
         try:
-            mail_this(warning)
+            self.mail_this(warning)
         except socket.gaierror:
             current_time = time.localtime()
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
             with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
                 killer_file.write('Time: {0}\nInternet is out.\nFailure: {0}'.format(formatted_time, warning))
-        if sys.platform.startswith('win'):
-             subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
-        else:
-            subprocess.Popen(["/sbin/poweroff", "-f"])
+#        if sys.platform.startswith('win'):
+#             subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
+#        else:
+#            subprocess.Popen(["/sbin/poweroff", "-f"])
 
-    def mail_this(warning):
+    def mail_this(self, warning):
         subject = '[ALERT: {0}]'.format(warning)
         # typical values for text_subtype are plain, html, xml
         text_subtype = 'plain'
@@ -284,11 +293,11 @@ class Killer(object):
         content = 'Time:{0}\nWarning: {1}'.format(formatted_time, warning)
         msg = MIMEText(content, _charset='utf-8')
         msg['Subject'] = subject
-        msg['From'] = sender
+        msg['From'] = self.config["email"]["SENDER"]
         ssl_context = ssl.create_default_context(purpose=Purpose.SERVER_AUTH)
         ssl_context.verify_mode = ssl.CERT_REQUIRED
         ssl_context.check_hostname = True
-        ssl_context.set_ciphers(cipher_choice)
+        ssl_context.set_ciphers(self.config["email"]["CIPHER_CHOICE"])
         ssl_context.options &= ~ssl.HAS_SNI
         ssl_context.options &= ~ssl.OP_NO_COMPRESSION
         # No need to explicitally disable SSLv* as it's already been done
@@ -297,14 +306,14 @@ class Killer(object):
         ssl_context.options &= ~ssl.OP_NO_TLSv1_1
         ssl_context.options &= ~ssl.OP_SINGLE_DH_USE
         ssl_context.options &= ~ssl.OP_SINGLE_ECDH_USE
-        conn = smtplib.SMTP_SSL(smtp_server,
-                                port=smtp_port,
+        conn = smtplib.SMTP_SSL(self.config["email"]["SMTP_SERVER"],
+                                port=self.config["email"]["SMTP_PORT"],
                                 context=ssl_context)
-        conn.esmtp_features['auth'] = login_auth
-        conn.login(sender, sender_password)
+        conn.esmtp_features['auth'] = self.config["email"]["LOGIN_AUTH"]
+        conn.login(self.config["email"]["SENDER"], self.config["email"]["SENDER_PASSWORD"])
         try:
-            for each in json.loads(self.config['email']['DESTINATION']):
-                conn.sendmail(sender, each, msg.as_string())
+            for each in json.loads(self.config["email"]["DESTINATION"]):
+                conn.sendmail(self.config["email"]["SENDER"], each, msg.as_string())
         finally:
             conn.quit()
 
@@ -322,10 +331,10 @@ if __name__ == "__main__":
             execute.detect_bt()
             execute.detect_ac()
             execute.detect_battery()
-            execute.detect_tray(execute.config['linux']['CDROM_DRIVE'])
+            execute.detect_tray()
         execute.detect_usb()
         execute.detect_ethernet()
         if args.debug:
             break
         else:
-            time.sleep(execute.config['global']['REST'])
+            time.sleep(execute.config.getint('global', 'REST'))
