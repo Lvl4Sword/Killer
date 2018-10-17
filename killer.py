@@ -29,7 +29,7 @@ or the disk tray is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.3.7"
+__version__ = "0.3.8"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -62,7 +62,7 @@ USB_ID_REGEX = re.compile("([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
 class Killer(object):
     def __init__(self):
         self.config = configparser.ConfigParser()
-        self.config.read('/root/scripts/killer.conf')
+        self.config.read('/change/this/killer.conf')
 
     def detect_bt(self):
         """detect_bt looks for paired MAC addresses,
@@ -100,8 +100,8 @@ class Killer(object):
                                     self.kill_the_system('Bluetooth Connected Name Mismatch')
 
     def detect_usb(self):
-        """detect_usb finds all XXXX:XXXX USB IDs connected to the system.
-        This can include internal hardware as well.
+        """detect_usb finds all USB IDs/VolumeSerialNumbers connected to the system.
+        For linux, this includes internal hardware as well.
         """
         if sys.platform.startswith("linux"):
             ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
@@ -277,10 +277,10 @@ class Killer(object):
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
             with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
                 killer_file.write('Time: {0}\nInternet is out.\nFailure: {0}'.format(formatted_time, warning))
-#        if sys.platform.startswith('win'):
-#             subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
-#        else:
-#            subprocess.Popen(["/sbin/poweroff", "-f"])
+        if sys.platform.startswith('win'):
+             subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
+        else:
+            subprocess.Popen(["/sbin/poweroff", "-f"])
 
     def mail_this(self, warning):
         subject = '[ALERT: {0}]'.format(warning)
@@ -290,7 +290,7 @@ class Killer(object):
         current_time = time.localtime()
         formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
 
-        content = 'Time:{0}\nWarning: {1}'.format(formatted_time, warning)
+        content = 'Time: {0}\nWarning: {1}'.format(formatted_time, warning)
         msg = MIMEText(content, _charset='utf-8')
         msg['Subject'] = subject
         msg['From'] = self.config["email"]["SENDER"]
