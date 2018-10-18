@@ -380,5 +380,5 @@ def main():
             time.sleep(execute.config.getint('global', 'REST'))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
