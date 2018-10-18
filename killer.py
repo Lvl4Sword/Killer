@@ -29,7 +29,7 @@ or disk tray/ethernet is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.3.9"
+__version__ = "0.4.0"
 __author__ = "Lvl4Sword"
 
 import argparse
@@ -52,6 +52,8 @@ if sys.platform.startswith('win'):
     from ctypes import wintypes
 elif sys.platform.startswith('linux'):
     import fcntl
+
+socket.setdefaulttimeout(3)
 
 BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
 BT_NAME_REGEX = re.compile("[0-9A-Za-z ]+(?=\s\()")
@@ -297,7 +299,7 @@ class Killer(object):
             current_time = time.localtime()
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
             with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
-                killer_file.write('Time: {0}\nInternet is out.\nFailure: {0}'.format(formatted_time, warning))
+                killer_file.write('Time: {0}\nInternet is out.\nFailure: {1}\n\n'.format(formatted_time, warning))
         if sys.platform.startswith('win'):
              subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
         else:
@@ -335,9 +337,10 @@ class Killer(object):
         try:
             for each in json.loads(self.config["email"]["DESTINATION"]):
                 conn.sendmail(self.config["email"]["SENDER"], each, msg.as_string())
+        except socket.timeout:
+            raise socket.gaierror
         finally:
             conn.quit()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
