@@ -67,7 +67,8 @@ if WINDOWS:
 elif POSIX:
     import fcntl
 
-# Regular expressions
+socket.setdefaulttimeout(3)
+
 BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
 BT_NAME_REGEX = re.compile("[0-9A-Za-z ]+(?=\s\()")
 BT_CONNECTED_REGEX = re.compile("(Connected: [0-1])")
