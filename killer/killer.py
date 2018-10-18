@@ -288,7 +288,7 @@ class Killer(object):
                     self.kill_the_system('Ethernet')
         elif WINDOWS:
             for x in wmi.WMI().Win32_NetworkAdapter():
-                if x.NetworkConnectionStatus is not None:
+                if x.NetConnectionStatus is not None:
                     if DEBUG:
                         # This can contain quite a few things
                         # Including Ethernet, Bluetooth, and Wireless
