@@ -45,7 +45,7 @@ import time
 from email.mime.text import MIMEText
 from ssl import Purpose
 
-__version__ = "0.4.0"
+__version__ = "0.6.0"
 __author__ = "Lvl4Sword"
 
 DEBUG = False
@@ -140,12 +140,11 @@ class Killer(object):
                         self.kill_the_system('USB Connected Whitelist')
         elif WINDOWS:
             ids = []
-            if DEBUG:
-                print("USB:")
             for each in wmi.WMI().Win32_LogicalDisk():
                 if each.Description == 'Removable Disk':
                     ids.append(each.VolumeSerialNumber)
             if DEBUG:
+                print("USB:")
                 print(', '.join(ids))
                 print()
             else:
