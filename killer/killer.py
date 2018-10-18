@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
 """If there are any unrecognized bluetooth or USB devices,
 laptop power is unplugged, laptop battery is removed while on AC,
-or disk tray/ethernet is tampered with, shut the computer down!
+or the disk tray is tampered with, shut the computer down!
 """
 #         _  _  _  _ _
 #        | |/ /(_)| | |
@@ -29,28 +30,41 @@ or disk tray/ethernet is tampered with, shut the computer down!
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__version__ = "0.4.0"
-__author__ = "Lvl4Sword"
-
 import argparse
 import configparser
 import json
 import os
+import platform
 import re
-import ssl
 import smtplib
 import socket
+import ssl
 import subprocess
 import sys
 import time
 from email.mime.text import MIMEText
 from ssl import Purpose
 
-if sys.platform.startswith('win'):
+__version__ = "0.4.0"
+__author__ = "Lvl4Sword"
+
+DEBUG = False
+
+# Determine what platform we're running
+WINDOWS = sys.platform.startswith('win32')
+LINUX = sys.platform.startswith('linux')
+OSX = sys.platform.startswith('darwin')
+BSD = OSX or 'bsd' in sys.platform
+POSIX = LINUX or BSD
+
+# Detect if we're running in Windows Subsystem for Linux (WSL)
+WSL = not WINDOWS and 'Microsoft' in platform.version()
+
+if WINDOWS:
     import wmi
     import ctypes
     from ctypes import wintypes
-elif sys.platform.startswith('linux'):
+elif POSIX:
     import fcntl
 
 socket.setdefaulttimeout(3)
@@ -71,17 +85,17 @@ class Killer(object):
         names for paired devices, and connected status for devices.
         Two whitelists, one for paired, one for connected.
         """
-        if sys.platform.startswith("linux"):
+        if POSIX:
             try:
                 bt_command = subprocess.check_output(["bt-device", "--list"],
-                                                      shell=False).decode("utf-8")
+                                                      shell=False).decode()
             except IOError:
-                if args.debug:
+                if DEBUG:
                     print("None detected\n")
                 else:
                     return
             else:
-                if args.debug:
+                if DEBUG:
                     print("Bluetooth:")
                     bt_devices = bt_command.split('\n')
                     if len(bt_devices) == 3 and bt_devices[2] == '':
@@ -98,7 +112,7 @@ class Killer(object):
                         else:
                             connected = subprocess.check_output(["bt-device", "-i",
                                                                  paired_devices[each]],
-                                                                 shell=False).decode("utf-8")
+                                                                 shell=False).decode()
                             connected_text = re.findall(BT_CONNECTED_REGEX, connected)
                             if connected_text[0].endswith("1") and paired_devices[each] not in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
                                 self.kill_the_system('Bluetooth Connected MAC Disallowed')
@@ -110,10 +124,10 @@ class Killer(object):
         """detect_usb finds all USB IDs/VolumeSerialNumbers connected to the system.
         For linux, this includes internal hardware as well.
         """
-        if sys.platform.startswith("linux"):
+        if POSIX:
             ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
-                                                                    shell=False).decode("utf-8"))
-            if args.debug:
+                                                                    shell=False).decode())
+            if DEBUG:
                 print("USB:")
                 print(', '.join(ids))
                 print()
@@ -124,14 +138,14 @@ class Killer(object):
                 for device in json.loads(self.config['linux']['USB_CONNECTED_WHITELIST']):
                     if device not in ids:
                         self.kill_the_system('USB Connected Whitelist')
-        elif sys.platform.startswith("win"):
+        elif WINDOWS:
             ids = []
-            if args.debug:
+            if DEBUG:
                 print("USB:")
             for each in wmi.WMI().Win32_LogicalDisk():
                 if each.Description == 'Removable Disk':
                     ids.append(each.VolumeSerialNumber)
-            if args.debug:
+            if DEBUG:
                 print(', '.join(ids))
                 print()
             else:
@@ -148,8 +162,8 @@ class Killer(object):
         0 = disconnected
         1 = connected
         """
-        if sys.platform.startswith("linux"):
-            if args.debug:
+        if POSIX:
+            if DEBUG:
                 ac_types = []
                 for each in os.listdir("/sys/class/power_supply"):
                     with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
@@ -157,7 +171,7 @@ class Killer(object):
                         if the_type == "Mains":
                             ac_types.append(each)
                 print("AC:")
-                if ac_types != []:
+                if ac_types:
                     if len(ac_types) >= 2:
                         print(', '.join(ac_types))
                     elif len(ac_types) == 1:
@@ -166,7 +180,7 @@ class Killer(object):
                 else:
                     print("None detected\n")
             else:
-                with open(self.config['linux']['AC_FILE'], "r") as ac:
+                with open(self.config['linux']['AC_FILE']) as ac:
                     online = int(ac.readline().strip())
                     if not online:
                         self.kill_the_system('AC')
@@ -178,8 +192,8 @@ class Killer(object):
         0 = not present
         1 = present
         """
-        if sys.platform.startswith("linux"):
-            if args.debug:
+        if POSIX:
+            if DEBUG:
                 battery_types = []
                 for each in os.listdir("/sys/class/power_supply"):
                     with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
@@ -187,7 +201,7 @@ class Killer(object):
                         if the_type == "Battery":
                             battery_types.append(each)
                 print("Battery:")
-                if battery_types != []:
+                if battery_types:
                     if len(battery_types) >= 2:
                         print(', '.join(battery_types))
                     elif len(battery_types) == 1:
@@ -197,7 +211,7 @@ class Killer(object):
                     print("None detected\n")
             else:
                 try:
-                    with open(self.config['linux']['BATTERY_FILE'], "r") as battery:
+                    with open(self.config['linux']['BATTERY_FILE']) as battery:
                         present = int(battery.readline().strip())
                         if not present:
                             self.kill_the_system('Battery')
@@ -212,12 +226,12 @@ class Killer(object):
         3 = reading tray
         4 = disk in tray
         """
-        if sys.platform.startswith('linux'):
+        if POSIX:
             disk_tray = self.config['linux']['CDROM_DRIVE']
             fd = os.open(disk_tray, os.O_RDONLY | os.O_NONBLOCK)
             rv = fcntl.ioctl(fd, 0x5326)
             os.close(fd)
-            if args.debug:
+            if DEBUG:
                 print('CD Tray:')
                 print(rv)
                 print()
@@ -241,7 +255,7 @@ class Killer(object):
         if not GetSystemPowerStatus(ctypes.pointer(status)):
             raise ctypes.WinError()
         else:
-            if args.debug:
+            if DEBUG:
                 print('Power:')
                 print('ACLineStatus', status.ACLineStatus)
                 print('BatteryFlag', status.BatteryFlag)
@@ -264,19 +278,19 @@ class Killer(object):
         0 = False
         1 = True
         """
-        if sys.platform.startswith("linux"):
-            with open(self.config['linux']['ETHERNET_CONNECTED'], "r") as ethernet:
+        if POSIX:
+            with open(self.config['linux']['ETHERNET_CONNECTED']) as ethernet:
                 connected = int(ethernet.readline().strip())
-            if args.debug:
+            if DEBUG:
                 print("Ethernet:")
                 print(connected)
             else:
                 if connected:
                     self.kill_the_system('Ethernet')
-        elif sys.platform.startswith("win"):
-            for each in wmi.WMI().Win32_NetworkAdapter():
-                if x.NetworkConnectionStatus is not None:
-                    if args.debug:
+        elif WINDOWS:
+            for x in wmi.WMI().Win32_NetworkAdapter():
+                if x.NetConnectionStatus is not None:
+                    if DEBUG:
                         # This can contain quite a few things
                         # Including Ethernet, Bluetooth, and Wireless
                         print(x.Name)
@@ -300,8 +314,8 @@ class Killer(object):
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
             with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
                 killer_file.write('Time: {0}\nInternet is out.\nFailure: {1}\n\n'.format(formatted_time, warning))
-        if sys.platform.startswith('win'):
-             subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
+        if WINDOWS:
+            subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
         else:
             subprocess.Popen(["/sbin/poweroff", "-f"])
 
@@ -323,7 +337,7 @@ class Killer(object):
         ssl_context.set_ciphers(self.config["email"]["CIPHER_CHOICE"])
         ssl_context.options &= ~ssl.HAS_SNI
         ssl_context.options &= ~ssl.OP_NO_COMPRESSION
-        # No need to explicitally disable SSLv* as it's already been done
+        # No need to explicitly disable SSLv* as it's already been done
         # https://docs.python.org/3/library/ssl.html#id7
         ssl_context.options &= ~ssl.OP_NO_TLSv1
         ssl_context.options &= ~ssl.OP_NO_TLSv1_1
@@ -342,23 +356,30 @@ class Killer(object):
         finally:
             conn.quit()
 
-if __name__ == "__main__":
+
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug", help="Prints all info once, without worrying about shutdown.",
-                        action="store_true")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Prints all info once, without worrying about shutdown.")
     args = parser.parse_args()
+    global DEBUG
+    DEBUG = args.debug
     execute = Killer()
     while True:
-        if sys.platform.startswith("win"):
+        if WINDOWS:
             execute.detect_power()
-        elif sys.platform.startswith("linux"):
+        elif POSIX:
             execute.detect_bt()
             execute.detect_ac()
             execute.detect_battery()
             execute.detect_tray()
         execute.detect_usb()
         execute.detect_ethernet()
-        if args.debug:
+        if DEBUG:
             break
         else:
             time.sleep(execute.config.getint('global', 'REST'))
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,2 @@
+WMI;platform_system=="Windows"
+pywin32>=223;platform_system=="Windows"
