@@ -87,7 +87,7 @@ class Killer(object):
         if POSIX:
             try:
                 bt_command = subprocess.check_output(["bt-device", "--list"],
-                                                      shell=False).decode("utf-8")
+                                                      shell=False).decode()
             except IOError:
                 if DEBUG:
                     print("None detected\n")
@@ -111,7 +111,7 @@ class Killer(object):
                         else:
                             connected = subprocess.check_output(["bt-device", "-i",
                                                                  paired_devices[each]],
-                                                                 shell=False).decode("utf-8")
+                                                                 shell=False).decode()
                             connected_text = re.findall(BT_CONNECTED_REGEX, connected)
                             if connected_text[0].endswith("1") and paired_devices[each] not in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
                                 self.kill_the_system('Bluetooth Connected MAC Disallowed')
@@ -125,7 +125,7 @@ class Killer(object):
         """
         if POSIX:
             ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
-                                                                    shell=False).decode("utf-8"))
+                                                                    shell=False).decode())
             if DEBUG:
                 print("USB:")
                 print(', '.join(ids))
@@ -137,7 +137,7 @@ class Killer(object):
                 for device in json.loads(self.config['linux']['USB_CONNECTED_WHITELIST']):
                     if device not in ids:
                         self.kill_the_system('USB Connected Whitelist')
-        elif sys.platform.startswith("win"):
+        elif WINDOWS:
             ids = []
             if DEBUG:
                 print("USB:")
@@ -179,7 +179,7 @@ class Killer(object):
                 else:
                     print("None detected\n")
             else:
-                with open(self.config['linux']['AC_FILE'], "r") as ac:
+                with open(self.config['linux']['AC_FILE']) as ac:
                     online = int(ac.readline().strip())
                     if not online:
                         self.kill_the_system('AC')
@@ -210,7 +210,7 @@ class Killer(object):
                     print("None detected\n")
             else:
                 try:
-                    with open(self.config['linux']['BATTERY_FILE'], "r") as battery:
+                    with open(self.config['linux']['BATTERY_FILE']) as battery:
                         present = int(battery.readline().strip())
                         if not present:
                             self.kill_the_system('Battery')
@@ -278,7 +278,7 @@ class Killer(object):
         1 = True
         """
         if POSIX:
-            with open(self.config['linux']['ETHERNET_CONNECTED'], "r") as ethernet:
+            with open(self.config['linux']['ETHERNET_CONNECTED']) as ethernet:
                 connected = int(ethernet.readline().strip())
             if DEBUG:
                 print("Ethernet:")
@@ -286,7 +286,7 @@ class Killer(object):
             else:
                 if connected:
                     self.kill_the_system('Ethernet')
-        elif sys.platform.startswith("win"):
+        elif WINDOWS:
             for x in wmi.WMI().Win32_NetworkAdapter():
                 if x.NetworkConnectionStatus is not None:
                     if DEBUG:
@@ -313,7 +313,7 @@ class Killer(object):
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
             with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
                 killer_file.write('Time: {0}\nInternet is out.\nFailure: {1}\n\n'.format(formatted_time, warning))
-        if sys.platform.startswith('win'):
+        if WINDOWS:
             subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
         else:
             subprocess.Popen(["/sbin/poweroff", "-f"])
