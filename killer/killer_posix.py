@@ -129,9 +129,6 @@ class KillerPosix(KillerBase):
             if rv != 1:
                 self.kill_the_system('CD Tray')
 
-    def detect_power(self):
-        raise NotImplementedError
-
     def detect_ethernet(self):
         with open(self.config['linux']['ETHERNET_CONNECTED']) as ethernet:
             connected = int(ethernet.readline().strip())

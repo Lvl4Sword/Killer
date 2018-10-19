@@ -7,6 +7,13 @@ import wmi
 from killer.killer_base import KillerBase
 
 
+class SYSTEM_POWER_STATUS(ctypes.Structure):
+    _fields_ = [
+        ('ACLineStatus', ctypes.c_ubyte),
+        ('BatteryFlag', ctypes.c_ubyte),
+    ]
+
+
 class KillerWindows(KillerBase):
     def __init__(self, config_path: str = None, debug: bool = False):
         super().__init__(config_path, debug)
@@ -32,46 +39,33 @@ class KillerWindows(KillerBase):
                     self.kill_the_system('USB Connected Whitelist')
 
     def detect_ac(self):
-        raise NotImplementedError
+        status = self._get_power_status()
+
+        if self.DEBUG:
+            print("AC:")
+            print(status.ACLineStatus)
+            print()
+        elif ('ACLineStatus', status.ACLineStatus) != 1:
+            # If not connected to power, shutdown
+            self.kill_the_system('AC')
 
     def detect_battery(self):
-        raise NotImplementedError
+        status = self._get_power_status()
+
+        if self.DEBUG:
+            print("Battery:")
+            print(status.BatteryFlag)
+            print()
+        elif ('BatteryFlag', status.BatteryFlag) not in [0, 1, 2, 4, 8, 9, 10, 12]:
+            if ('BatteryFlag', status.BatteryFlag) == 128:
+                # Battery not detected, so this is useless
+                pass
+            else:
+                # Battery is not connected, shut down
+                self.kill_the_system('Battery')
 
     def detect_tray(self):
         raise NotImplementedError
-
-    def detect_power(self):
-        class SYSTEM_POWER_STATUS(ctypes.Structure):
-            _fields_ = [
-                ('ACLineStatus', ctypes.c_ubyte),
-                ('BatteryFlag', ctypes.c_ubyte),
-            ]
-
-        SYSTEM_POWER_STATUS_P = ctypes.POINTER(SYSTEM_POWER_STATUS)
-        GetSystemPowerStatus = ctypes.windll.kernel32.GetSystemPowerStatus
-        GetSystemPowerStatus.argtypes = [SYSTEM_POWER_STATUS_P]
-        GetSystemPowerStatus.restype = wintypes.BOOL
-
-        status = SYSTEM_POWER_STATUS()
-        if not GetSystemPowerStatus(ctypes.pointer(status)):
-            raise ctypes.WinError()
-        else:
-            if self.DEBUG:
-                print('Power:')
-                print('ACLineStatus', status.ACLineStatus)
-                print('BatteryFlag', status.BatteryFlag)
-                print()
-            else:
-                if ('ACLineStatus', status.ACLineStatus) != 1:
-                    # If not connected to power, shutdown
-                    self.kill_the_system('AC')
-                elif ('BatteryFlag', status.BatteryFlag) not in [0, 1, 2, 4, 8, 9, 10, 12]:
-                    if ('BatteryFlag', status.BatteryFlag) == 128:
-                        # Battery not detected, so this is useless
-                        pass
-                    else:
-                        # Battery is not connected, shut down
-                        self.kill_the_system('Battery')
 
     def detect_ethernet(self):
         for x in wmi.WMI().Win32_NetworkAdapter():
@@ -92,3 +86,16 @@ class KillerWindows(KillerBase):
     def kill_the_system(self, warning: str):
         super().kill_the_system(warning)
         subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
+
+    @staticmethod
+    def _get_power_status():
+        SYSTEM_POWER_STATUS_P = ctypes.POINTER(SYSTEM_POWER_STATUS)
+        GetSystemPowerStatus = ctypes.windll.kernel32.GetSystemPowerStatus
+        GetSystemPowerStatus.argtypes = [SYSTEM_POWER_STATUS_P]
+        GetSystemPowerStatus.restype = wintypes.BOOL
+        status = SYSTEM_POWER_STATUS()
+
+        if not GetSystemPowerStatus(ctypes.pointer(status)):
+            raise ctypes.WinError()
+        else:
+            return status

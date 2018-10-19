@@ -70,13 +70,11 @@ def main():
     args = parser.parse_args()
     execute = get_killer(args)
     while True:
-        if WINDOWS:
-            execute.detect_power()
-        elif POSIX:
+        if POSIX:
             execute.detect_bt()
-            execute.detect_ac()
-            execute.detect_battery()
             execute.detect_tray()
+        execute.detect_ac()
+        execute.detect_battery()
         execute.detect_usb()
         execute.detect_ethernet()
         if execute.DEBUG:

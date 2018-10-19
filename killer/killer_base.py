@@ -85,10 +85,6 @@ class KillerBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def detect_power(self):
-        raise NotImplementedError
-
-    @abstractmethod
     def detect_ethernet(self):
         """Check if an ethernet cord is connected.
         Status:
