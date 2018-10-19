@@ -46,7 +46,7 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from ssl import Purpose
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 __author__ = "Lvl4Sword"
 
 # Determine what platform we're running
