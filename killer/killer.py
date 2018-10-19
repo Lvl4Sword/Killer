@@ -43,12 +43,11 @@ import subprocess
 import sys
 import time
 from email.mime.text import MIMEText
+from pathlib import Path
 from ssl import Purpose
 
 __version__ = "0.6.0"
 __author__ = "Lvl4Sword"
-
-DEBUG = False
 
 # Determine what platform we're running
 WINDOWS = sys.platform.startswith('win32')
@@ -75,10 +74,31 @@ BT_CONNECTED_REGEX = re.compile("(Connected: [0-1])")
 USB_ID_REGEX = re.compile("([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
 
 
-class Killer(object):
-    def __init__(self):
+class Killer:
+    def __init__(self, config_path: str = None, debug: bool = False):
+        self.DEBUG = debug
+        if config_path is None:
+            to_search = [Path.cwd(),
+                         Path(__file__).parent,
+                         Path.home()]
+            for path in to_search:
+                if self.DEBUG:
+                    print("Searching for 'killer.conf' in: %s" % str(path))
+                file = path / 'killer.conf'
+                if file.exists():
+                    config_path = file
+                    break
+            if config_path is None:
+                print("ERROR: Failed to find configuration file 'killer.conf'"
+                      "\nPaths searched:\n%s" % ''.join(['  %s\n' % str(x)
+                                                         for x in to_search]))
+                sys.exit(1)
+        self.config_file = Path(config_path).resolve()
+        if not self.config_file.exists():
+            print("Could not find configuration file %s" % str(self.config_file))
+            sys.exit(1)
         self.config = configparser.ConfigParser()
-        self.config.read('/change/this/killer.conf')
+        self.config.read(str(self.config_file))  # Python 3.5 requires str() conversion
 
     def detect_bt(self):
         """detect_bt looks for paired MAC addresses,
@@ -90,12 +110,12 @@ class Killer(object):
                 bt_command = subprocess.check_output(["bt-device", "--list"],
                                                       shell=False).decode()
             except IOError:
-                if DEBUG:
+                if self.DEBUG:
                     print("None detected\n")
                 else:
                     return
             else:
-                if DEBUG:
+                if self.DEBUG:
                     print("Bluetooth:")
                     bt_devices = bt_command.split('\n')
                     if len(bt_devices) == 3 and bt_devices[2] == '':
@@ -127,7 +147,7 @@ class Killer(object):
         if POSIX:
             ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
                                                                     shell=False).decode())
-            if DEBUG:
+            if self.DEBUG:
                 print("USB:")
                 print(', '.join(ids))
                 print()
@@ -143,7 +163,7 @@ class Killer(object):
             for each in wmi.WMI().Win32_LogicalDisk():
                 if each.Description == 'Removable Disk':
                     ids.append(each.VolumeSerialNumber)
-            if DEBUG:
+            if self.DEBUG:
                 print("USB:")
                 print(', '.join(ids))
                 print()
@@ -162,7 +182,7 @@ class Killer(object):
         1 = connected
         """
         if POSIX:
-            if DEBUG:
+            if self.DEBUG:
                 ac_types = []
                 for each in os.listdir("/sys/class/power_supply"):
                     with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
@@ -192,7 +212,7 @@ class Killer(object):
         1 = present
         """
         if POSIX:
-            if DEBUG:
+            if self.DEBUG:
                 battery_types = []
                 for each in os.listdir("/sys/class/power_supply"):
                     with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
@@ -230,7 +250,7 @@ class Killer(object):
             fd = os.open(disk_tray, os.O_RDONLY | os.O_NONBLOCK)
             rv = fcntl.ioctl(fd, 0x5326)
             os.close(fd)
-            if DEBUG:
+            if self.DEBUG:
                 print('CD Tray:')
                 print(rv)
                 print()
@@ -254,7 +274,7 @@ class Killer(object):
         if not GetSystemPowerStatus(ctypes.pointer(status)):
             raise ctypes.WinError()
         else:
-            if DEBUG:
+            if self.DEBUG:
                 print('Power:')
                 print('ACLineStatus', status.ACLineStatus)
                 print('BatteryFlag', status.BatteryFlag)
@@ -280,7 +300,7 @@ class Killer(object):
         if POSIX:
             with open(self.config['linux']['ETHERNET_CONNECTED']) as ethernet:
                 connected = int(ethernet.readline().strip())
-            if DEBUG:
+            if self.DEBUG:
                 print("Ethernet:")
                 print(connected)
             else:
@@ -289,7 +309,7 @@ class Killer(object):
         elif WINDOWS:
             for x in wmi.WMI().Win32_NetworkAdapter():
                 if x.NetConnectionStatus is not None:
-                    if DEBUG:
+                    if self.DEBUG:
                         # This can contain quite a few things
                         # Including Ethernet, Bluetooth, and Wireless
                         print(x.Name)
@@ -302,7 +322,7 @@ class Killer(object):
                             if x.NetConnectionStatus == 7:
                                 self.kill_the_system('Ethernet')
 
-    def kill_the_system(self, warning):
+    def kill_the_system(self, warning: str):
         """Send an e-mail, and then
         shut the system down quickly.
         """
@@ -318,7 +338,7 @@ class Killer(object):
         else:
             subprocess.Popen(["/sbin/poweroff", "-f"])
 
-    def mail_this(self, warning):
+    def mail_this(self, warning: str):
         subject = '[ALERT: {0}]'.format(warning)
         # typical values for text_subtype are plain, html, xml
         text_subtype = 'plain'
@@ -360,10 +380,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Prints all info once, without worrying about shutdown.")
+    parser.add_argument("-c", "--config", type=str, default=None,
+                        help="Path to a configuration file to use")
     args = parser.parse_args()
-    global DEBUG
-    DEBUG = args.debug
-    execute = Killer()
+    execute = Killer(config_path=args.config, debug=args.debug)
     while True:
         if WINDOWS:
             execute.detect_power()
@@ -374,7 +394,7 @@ def main():
             execute.detect_tray()
         execute.detect_usb()
         execute.detect_ethernet()
-        if DEBUG:
+        if execute.DEBUG:
             break
         else:
             time.sleep(execute.config.getint('global', 'REST'))
