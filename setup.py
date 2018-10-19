@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 from killer.killer import __version__
 
@@ -24,9 +24,9 @@ setup(
     #     'Discord Server': 'https://discord.gg/python',
     # },
     license='AGPL 3.0',
-    # data_files=[],
-    packages=find_packages(),
-    zip_safe=True,
+    data_files=[('killer', ['killer.conf'])],
+    packages=['killer'],
+    zip_safe=False,
     # These enable commandline usage of the tool
     entry_points={'console_scripts': ['killer = killer.killer:main']},
     install_requires=Path('requirements.txt').read_text().split(),

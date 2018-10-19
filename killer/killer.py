@@ -43,6 +43,7 @@ import subprocess
 import sys
 import time
 from email.mime.text import MIMEText
+from pathlib import Path
 from ssl import Purpose
 
 __version__ = "0.6.0"
@@ -76,9 +77,27 @@ USB_ID_REGEX = re.compile("([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
 
 
 class Killer(object):
-    def __init__(self):
+    def __init__(self, config_path=None):
+        if config_path is None:
+            to_search = [Path.cwd(),
+                         Path(__file__).parent,
+                         Path.home()]
+            for path in to_search:
+                file = path / 'killer.conf'
+                if file.exists():
+                    config_path = file
+                    break
+            if config_path is None:
+                print("ERROR: Failed to find configuration file 'killer.conf'"
+                      "\nPaths searched:\n%s" % ''.join(['  %s\n' % str(x)
+                                                         for x in to_search]))
+                sys.exit(1)
+        self.config_file = Path(config_path).resolve()
+        if not self.config_file.exists():
+            print("Could not find configuration file %s" % str(self.config_file))
+            sys.exit(1)
         self.config = configparser.ConfigParser()
-        self.config.read('/change/this/killer.conf')
+        self.config.read(str(self.config_file))  # Python 3.5 requires str() conversion
 
     def detect_bt(self):
         """detect_bt looks for paired MAC addresses,
@@ -360,10 +379,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Prints all info once, without worrying about shutdown.")
+    parser.add_argument("-c", "--config", type=str, default=None,
+                        help="Path to a configuration file to use")
     args = parser.parse_args()
     global DEBUG
     DEBUG = args.debug
-    execute = Killer()
+    execute = Killer(config_path=args.config)
     while True:
         if WINDOWS:
             execute.detect_power()
