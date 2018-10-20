@@ -5,12 +5,13 @@ from pathlib import Path
 from setuptools import setup
 
 from killer.killer import __version__
+from killer.killer import __author__
 
 
 setup(
     name='killer',
     version=__version__,
-    author='Scott King',
+    author=__author__,
     # author_email='',
     description='Shuts the system down upon disallowed changes',
     # This is what you see on PyPI page
