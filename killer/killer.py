@@ -35,8 +35,8 @@ import platform
 import sys
 import time
 
-__version__ = "0.6.1"
-__author__ = "Lvl4Sword"
+__version__ = "0.6.2"
+__author__ = "Lvl4Sword, GhostOfGoes, MarkKoz"
 
 # Determine what platform we're running
 WINDOWS = sys.platform.startswith('win32')
