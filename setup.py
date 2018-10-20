@@ -4,8 +4,7 @@ from pathlib import Path
 
 from setuptools import setup
 
-from killer.killer import __version__
-from killer.killer import __author__
+from killer import __author__, __license__, __version__
 
 
 setup(
@@ -24,7 +23,7 @@ setup(
     #     'Documentation': 'https://killer.readthedocs.io/en/latest/',
     #     'Discord Server': 'https://discord.gg/python',
     # },
-    license='AGPL 3.0',
+    license=__license__,
     data_files=[('killer', ['killer.conf'])],
     packages=['killer'],
     zip_safe=False,
