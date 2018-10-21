@@ -1,17 +1,9 @@
-import ctypes
 import subprocess
-from ctypes import wintypes
 
 import wmi
 
-from killer.killer_base import KillerBase
-
-
-class SYSTEM_POWER_STATUS(ctypes.Structure):
-    _fields_ = [
-        ('ACLineStatus', ctypes.c_ubyte),
-        ('BatteryFlag', ctypes.c_ubyte),
-    ]
+from .killer_base import KillerBase
+from .windows import power
 
 
 class KillerWindows(KillerBase):
@@ -39,13 +31,14 @@ class KillerWindows(KillerBase):
                     self.kill_the_system('USB Connected Whitelist')
 
     def detect_ac(self):
-        status = self._get_power_status()
+        status = power.get_power_status().ac_line_status
+        status = power.ACLineStatus.from_ubyte(status)
 
         if self.DEBUG:
             print("AC:")
-            print(status.ACLineStatus)
+            print(status.name)
             print()
-        elif ('ACLineStatus', status.ACLineStatus) != 1:
+        elif status != power.ACLineStatus.ONLINE:
             # If not connected to power, shutdown
             self.kill_the_system('AC')
 
@@ -86,16 +79,3 @@ class KillerWindows(KillerBase):
     def kill_the_system(self, warning: str):
         super().kill_the_system(warning)
         subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
-
-    @staticmethod
-    def _get_power_status():
-        SYSTEM_POWER_STATUS_P = ctypes.POINTER(SYSTEM_POWER_STATUS)
-        GetSystemPowerStatus = ctypes.windll.kernel32.GetSystemPowerStatus
-        GetSystemPowerStatus.argtypes = [SYSTEM_POWER_STATUS_P]
-        GetSystemPowerStatus.restype = wintypes.BOOL
-        status = SYSTEM_POWER_STATUS()
-
-        if not GetSystemPowerStatus(ctypes.pointer(status)):
-            raise ctypes.WinError()
-        else:
-            return status
