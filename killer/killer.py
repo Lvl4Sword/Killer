@@ -31,22 +31,9 @@ or the disk tray is tampered with, shut the computer down!
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
 import argparse
-import platform
-import sys
 import time
 
-__version__ = "0.6.2"
-__author__ = "Lvl4Sword, GhostOfGoes, MarkKoz"
-
-# Determine what platform we're running
-WINDOWS = sys.platform.startswith('win32')
-LINUX = sys.platform.startswith('linux')
-OSX = sys.platform.startswith('darwin')
-BSD = OSX or 'bsd' in sys.platform
-POSIX = LINUX or BSD
-
-# Detect if we're running in Windows Subsystem for Linux (WSL)
-WSL = not WINDOWS and 'Microsoft' in platform.version()
+from . import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
 
 
 def get_killer(args):
