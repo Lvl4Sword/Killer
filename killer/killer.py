@@ -33,7 +33,7 @@ or the disk tray is tampered with, shut the computer down!
 import argparse
 import time
 
-from . import WINDOWS, POSIX
+from . import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
 
 
 def get_killer(args):
