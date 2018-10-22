@@ -15,7 +15,7 @@
 
 import ctypes
 from ctypes import wintypes
-from enum import Enum, IntFlag
+from enum import Enum, Flag
 
 
 class ACLineStatus(Enum):
@@ -24,7 +24,7 @@ class ACLineStatus(Enum):
     UNKNOWN = 255
 
 
-class BatteryFlags(IntFlag):
+class BatteryFlags(Flag):
     HIGH = 1
     LOW = 2
     CRITICAL = 4
