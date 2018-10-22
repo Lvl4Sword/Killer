@@ -8,7 +8,6 @@ import time
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from pathlib import Path
-from ssl import Purpose
 
 
 class KillerBase(ABC):
@@ -108,17 +107,15 @@ class KillerBase(ABC):
 
     def mail_this(self, warning: str):
         subject = '[ALERT: {0}]'.format(warning)
-        # typical values for text_subtype are plain, html, xml
-        text_subtype = 'plain'
 
         current_time = time.localtime()
         formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
 
         content = 'Time: {0}\nWarning: {1}'.format(formatted_time, warning)
-        msg = MIMEText(content, _charset='utf-8')
+        msg = MIMEText(content, 'plain')
         msg['Subject'] = subject
         msg['From'] = self.config["email"]["SENDER"]
-        ssl_context = ssl.create_default_context(purpose=Purpose.SERVER_AUTH)
+        ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
         ssl_context.verify_mode = ssl.CERT_REQUIRED
         ssl_context.check_hostname = True
         ssl_context.set_ciphers(self.config["email"]["CIPHER_CHOICE"])
