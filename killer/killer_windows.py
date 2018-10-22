@@ -32,7 +32,7 @@ class KillerWindows(KillerBase):
 
     def detect_ac(self):
         status = power.get_power_status().ac_line_status
-        status = power.ACLineStatus.from_ubyte(status)
+        status = power.ACLineStatus(status)
 
         if self.DEBUG:
             print("AC:")

@@ -23,9 +23,6 @@ class ACLineStatus(Enum):
     ONLINE = 1
     UNKNOWN = 255
 
-    @classmethod
-    def from_ubyte(cls, ubyte: ctypes.c_ubyte):
-        return cls(ubyte.value)
 
 class BatteryFlags(IntFlag):
     HIGH = 1
@@ -34,10 +31,6 @@ class BatteryFlags(IntFlag):
     CHARGING = 8
     NONE = 128
     UNKNOWN = 255
-
-    @classmethod
-    def from_ubyte(cls, ubyte: ctypes.c_ubyte):
-        return cls(ubyte.value)
 
 
 class SystemPowerStatus(ctypes.Structure):
