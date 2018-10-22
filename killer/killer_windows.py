@@ -43,19 +43,15 @@ class KillerWindows(KillerBase):
             self.kill_the_system('AC')
 
     def detect_battery(self):
-        status = self._get_power_status()
+        status = power.get_power_status().battery_flag
+        status = power.BatteryFlags(status)
 
         if self.DEBUG:
             print("Battery:")
-            print(status.BatteryFlag)
+            print(status)
             print()
-        elif ('BatteryFlag', status.BatteryFlag) not in [0, 1, 2, 4, 8, 9, 10, 12]:
-            if ('BatteryFlag', status.BatteryFlag) == 128:
-                # Battery not detected, so this is useless
-                pass
-            else:
-                # Battery is not connected, shut down
-                self.kill_the_system('Battery')
+        elif status == power.BatteryFlags.NONE:
+            self.kill_the_system('Battery')
 
     def detect_tray(self):
         raise NotImplementedError
