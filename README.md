@@ -9,26 +9,17 @@
    \                       | _   _   _  \
     `.                  ___|____________/
       ``````````````````
-```
 
-```
             System tamper detector
 (USB, Bluetooth, AC, Battery, Disk Tray, Ethernet)
   Shuts the system down upon disallowed changes.
-
-Looking for testers to support more than just Linux.
 ```
 
 ## Installation
-```bash
-git clone https://github.com/Lvl4Sword/Killer.git
-cd Killer
-pip3 install --user -U -r requirements.txt
-```
+pip install killer
 
 ## Usage
 TBD
-
 
 # Development
 ## Linux
