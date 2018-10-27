@@ -18,7 +18,7 @@ import sys
 
 __author__ = "Lvl4Sword, GhostOfGoes, MarkKoz"
 __license__ = "AGPL 3.0"
-__version__ = "0.6.2"
+__version__ = "0.6.3"
 
 # Determine what platform we're running
 WINDOWS = sys.platform.startswith('win32')
