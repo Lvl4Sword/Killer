@@ -25,7 +25,7 @@ setup(
     # },
     license=__license__,
     data_files=[('killer', ['killer.conf'])],
-    packages=['killer'],
+    packages=['killer', 'killer.windows'],
     zip_safe=False,
     # These enable commandline usage of the tool
     entry_points={'console_scripts': ['killer = killer.killer:main']},
