@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 from killer import __author__, __license__, __version__
 
@@ -21,11 +21,10 @@ setup(
     download_url='https://pypi.org/project/killer/',
     # project_urls={
     #     'Documentation': 'https://killer.readthedocs.io/en/latest/',
-    #     'Discord Server': 'https://discord.gg/python',
     # },
     license=__license__,
     data_files=[('killer', ['killer.conf'])],
-    packages=['killer', 'killer.windows'],
+    packages=find_packages(),
     zip_safe=False,
     # These enable commandline usage of the tool
     entry_points={'console_scripts': ['killer = killer.killer:main']},
