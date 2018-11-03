@@ -18,10 +18,9 @@ setup(
     # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
     long_description_content_type='text/markdown',
     url='https://github.com/Lvl4Sword/Killer',
-    download_url='https://pypi.org/project/killer/',
-    # project_urls={
-    #     'Documentation': 'https://killer.readthedocs.io/en/latest/',
-    # },
+    project_urls={
+        'Discord Server': 'https://discord.gg/python',
+    },
     license=__license__,
     data_files=[('killer', ['killer.conf'])],
     packages=find_packages(),
@@ -29,7 +28,7 @@ setup(
     # These enable commandline usage of the tool
     entry_points={'console_scripts': ['killer = killer.killer:main']},
     install_requires=Path('requirements.txt').read_text().split(),
-    platforms=['Linux', 'Windows'],  # 'OSX'
+    platforms=['Linux', 'Windows'],
     keywords='killer monitoring watchdog shutdown '
              'tamper tampering tamper-evident',
     classifiers=[  # Used by PyPI to classify the project and make it searchable
@@ -44,7 +43,6 @@ setup(
         'Operating System :: Microsoft :: Windows :: Windows 7',
         'Operating System :: POSIX',
         'Operating System :: POSIX :: Linux',
-        # 'Operating System :: MacOS',
 
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
