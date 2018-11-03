@@ -8,17 +8,17 @@ import time
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from pathlib import Path
+from pprint import pformat
 
 
 class KillerBase(ABC):
+    CONFIG_SEARCH_PATHS = [Path.cwd(), Path.home(), Path(__file__).parent]
+
     def __init__(self, config_path: str = None, debug: bool = False):
         socket.setdefaulttimeout(3)
         self.DEBUG = debug
         if config_path is None:
-            to_search = [Path.cwd(),
-                         Path(__file__).parent,
-                         Path.home()]
-            for path in to_search:
+            for path in self.CONFIG_SEARCH_PATHS:
                 if self.DEBUG:
                     print("Searching for 'killer.conf' in: %s" % str(path))
                 file = path / 'killer.conf'
@@ -26,9 +26,8 @@ class KillerBase(ABC):
                     config_path = file
                     break
             if config_path is None:
-                print("ERROR: Failed to find configuration file 'killer.conf'"
-                      "\nPaths searched:\n%s" % ''.join(['  %s\n' % str(x)
-                                                         for x in to_search]))
+                print("ERROR: Failed to find configuration file 'killer.conf'")
+                print("Paths searched: %s", pformat(self.CONFIG_SEARCH_PATHS))
                 sys.exit(1)
         self.config_file = Path(config_path).resolve()
         if not self.config_file.exists():

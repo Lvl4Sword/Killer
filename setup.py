@@ -22,9 +22,10 @@ setup(
         'Discord Server': 'https://discord.gg/python',
     },
     license=__license__,
-    data_files=[('killer', ['killer.conf'])],
+    # data_files=[('killer', ['killer.conf'])],
     packages=find_packages(),
-    zip_safe=False,
+    include_package_data=True,
+    zip_safe=True,
     # These enable commandline usage of the tool
     entry_points={'console_scripts': ['killer = killer.killer:main']},
     install_requires=Path('requirements.txt').read_text().split(),
