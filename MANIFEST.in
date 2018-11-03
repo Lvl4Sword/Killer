@@ -1,0 +1,6 @@
+include LICENSE README.md killer.conf
+graft killer
+
+prune .github
+global-exclude *.py[cod] __pycache__ *.so *.class
+exclude requirements.txt dev-requirements.txt
