@@ -2,8 +2,8 @@ import subprocess
 
 import wmi
 
-from .killer_base import KillerBase
-from .windows import power
+from killer.killer_base import KillerBase
+from killer.windows import power
 
 
 class KillerWindows(KillerBase):

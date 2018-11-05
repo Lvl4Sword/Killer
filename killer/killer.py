@@ -33,8 +33,8 @@ or the disk tray is tampered with, shut the computer down!
 import argparse
 import time
 
+from killer import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
 from killer.utils.log import configure_logging
-from . import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
 
 
 def get_killer(args):
