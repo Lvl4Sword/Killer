@@ -7,6 +7,7 @@ import subprocess
 import fcntl
 
 from killer.killer_base import KillerBase
+from killer.posix import power
 
 BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
 BT_NAME_REGEX = re.compile("[0-9A-Za-z ]+(?=\s\()")
@@ -65,14 +66,8 @@ class KillerPosix(KillerBase):
 
     def detect_ac(self):
         if self.DEBUG:
-            ac_types = []
-            for each in os.listdir("/sys/class/power_supply"):
-                with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
-                    the_type = power_file.readline().strip()
-                    if the_type == "Mains":
-                        ac_types.append(each)
-
-            log.debug('AC: %s', ', '.join(ac_types) if ac_types else 'none detected')
+            devices = ', '.join(power.get_devices('Mains'))
+            log.debug('AC: %s', devices if devices else 'none detected')
         else:
             with open(self.config['linux']['AC_FILE']) as ac:
                 online = int(ac.readline().strip())
@@ -81,14 +76,8 @@ class KillerPosix(KillerBase):
 
     def detect_battery(self):
         if self.DEBUG:
-            battery_types = []
-            for each in os.listdir("/sys/class/power_supply"):
-                with open("/sys/class/power_supply/{0}/type".format(each)) as power_file:
-                    the_type = power_file.readline().strip()
-                    if the_type == "Battery":
-                        battery_types.append(each)
-
-            log.debug('Battery: %s', ', '.join(battery_types) if battery_types else 'none detected')
+            devices = ', '.join(power.get_devices('Battery'))
+            log.debug('Battery: %s', devices if devices else 'none detected')
         else:
             try:
                 with open(self.config['linux']['BATTERY_FILE']) as battery:
