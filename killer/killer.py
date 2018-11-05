@@ -33,6 +33,7 @@ or the disk tray is tampered with, shut the computer down!
 import argparse
 import time
 
+from killer.utils.log import configure_logging
 from . import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
 
 
@@ -54,7 +55,10 @@ def main():
                         help="Prints all info once, without worrying about shutdown.")
     parser.add_argument("-c", "--config", type=str, default=None,
                         help="Path to a configuration file to use")
+    parser.add_argument("-ld", "--log-dir", type=str,
+                        help="Path to where log files should be stored. If not specified, logging to file is disabled.")
     args = parser.parse_args()
+    configure_logging(args.debug, args.log_dir)
     execute = get_killer(args)
     while True:
         if POSIX:
