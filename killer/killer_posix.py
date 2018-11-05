@@ -66,26 +66,22 @@ class KillerPosix(KillerBase):
 
     def detect_ac(self):
         if self.DEBUG:
-            devices = ', '.join(power.get_devices('Mains'))
+            devices = ', '.join(power.get_devices(power.DeviceType.MAINS))
             log.debug('AC: %s', devices if devices else 'none detected')
-        else:
-            with open(self.config['linux']['AC_FILE']) as ac:
-                online = int(ac.readline().strip())
-                if not online:
-                    self.kill_the_system('AC')
+
+        if not power.is_online(self.config['linux']['AC_FILE']):
+            self.kill_the_system('AC')
 
     def detect_battery(self):
         if self.DEBUG:
-            devices = ', '.join(power.get_devices('Battery'))
+            devices = ', '.join(power.get_devices(power.DeviceType.BATTERY))
             log.debug('Battery: %s', devices if devices else 'none detected')
-        else:
-            try:
-                with open(self.config['linux']['BATTERY_FILE']) as battery:
-                    present = int(battery.readline().strip())
-                    if not present:
-                        self.kill_the_system('Battery')
-            except FileNotFoundError:
-                pass
+
+        try:
+            if not power.is_present(self.config['linux']['BATTERY_FILE']):
+                self.kill_the_system('Battery')
+        except FileNotFoundError:
+            pass
 
     def detect_tray(self):
         disk_tray = self.config['linux']['CDROM_DRIVE']
