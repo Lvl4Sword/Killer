@@ -141,4 +141,5 @@ class KillerPosix(KillerBase):
 
     def kill_the_system(self, warning: str):
         super().kill_the_system(warning)
-        subprocess.Popen(["/sbin/poweroff", "-f"])
+        if not self.DEBUG:
+            subprocess.Popen(["/sbin/poweroff", "-f"])

@@ -74,4 +74,5 @@ class KillerWindows(KillerBase):
 
     def kill_the_system(self, warning: str):
         super().kill_the_system(warning)
-        subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
+        if not self.DEBUG:
+            subprocess.Popen(["shutdown.exe", "/s", "/f", "/t", "00"])
