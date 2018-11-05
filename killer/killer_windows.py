@@ -22,7 +22,7 @@ class KillerWindows(KillerBase):
             if each.Description == 'Removable Disk':
                 ids.append(each.VolumeSerialNumber)
 
-        log.debug('USB: %s', ', '.join(ids))
+        log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
             if each_device not in self.config['windows']['USB_ID_WHITELIST']:

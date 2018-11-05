@@ -55,7 +55,7 @@ class KillerPosix(KillerBase):
     def detect_usb(self):
         ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
                                                                 shell=False).decode())
-        log.debug('USB: %s', ', '.join(ids))
+        log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
             if each_device not in json.loads(self.config['linux']['USB_ID_WHITELIST']):
