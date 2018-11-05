@@ -1,5 +1,6 @@
 import configparser
 import json
+import logging
 import smtplib
 import socket
 import ssl
@@ -9,6 +10,8 @@ from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from pathlib import Path
 from pprint import pformat
+
+log = logging.getLogger(__name__)
 
 
 class KillerBase(ABC):
@@ -96,6 +99,10 @@ class KillerBase(ABC):
         """Send an e-mail, and then
         shut the system down quickly.
         """
+        log.critical('Kill reason: ' + warning)
+        if self.DEBUG:
+            return
+
         try:
             self.mail_this(warning)
         except socket.gaierror:
