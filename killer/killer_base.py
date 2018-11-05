@@ -9,7 +9,6 @@ import time
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from pathlib import Path
-from pprint import pformat
 
 log = logging.getLogger(__name__)
 
@@ -22,19 +21,17 @@ class KillerBase(ABC):
         self.DEBUG = debug
         if config_path is None:
             for path in self.CONFIG_SEARCH_PATHS:
-                if self.DEBUG:
-                    print("Searching for 'killer.conf' in: %s" % str(path))
+                log.debug("Searching for 'killer.conf' in: %s", str(path))
                 file = path / 'killer.conf'
                 if file.exists():
                     config_path = file
                     break
             if config_path is None:
-                print("ERROR: Failed to find configuration file 'killer.conf'")
-                print("Paths searched: %s", pformat(self.CONFIG_SEARCH_PATHS))
+                log.critical("Failed to find configuration file 'killer.conf'")
                 sys.exit(1)
         self.config_file = Path(config_path).resolve()
         if not self.config_file.exists():
-            print("Could not find configuration file %s" % str(self.config_file))
+            log.critical("Could not find configuration file %s", str(self.config_file))
             sys.exit(1)
         self.config = configparser.ConfigParser()
         self.config.read(
