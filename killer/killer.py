@@ -31,18 +31,23 @@ or the disk tray is tampered with, shut the computer down!
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
 import argparse
+import logging
 import time
 
 from killer import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
 from killer.utils.log import configure_logging
 
+log = logging.getLogger(__name__)
+
 
 def get_killer(args):
     """Returns a KillerBase instance subclassed based on the OS."""
     if POSIX:
+        log.debug('Platform: POSIX')
         from killer.killer_posix import KillerPosix
         return KillerPosix(config_path=args.config, debug=args.debug)
     elif WINDOWS:
+        log.debug('Platform: Windows')
         from killer.killer_windows import KillerWindows
         return KillerWindows(config_path=args.config, debug=args.debug)
     else:
