@@ -14,26 +14,57 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
 import logging
-import sys
-from logging.handlers import TimedRotatingFileHandler
-from pathlib import Path
+import logging.config
+from typing import Optional
+
+import yaml
+
+# TODO: Replace KillerBase.mail_this() with an SMTPHandler here.
+DEFAULT_CONFIG = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'basic': {
+            'format': '%(asctime)s | %(name)-24s | %(levelname)8s | %(message)s'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'basic',
+            'stream': 'ext://sys.stdout'
+        }
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'INFO'
+        }
+    }
+}
+
+log = logging.getLogger(__name__)
 
 
-def configure_logging(debug: bool = False, log_dir: str = None):
-    handlers = [logging.StreamHandler(stream=sys.stdout)]
+def configure_logging(config_path: Optional[str], debug: bool = False):
+    if config_path:
+        try:
+            return load_file(config_path)
+        except Exception:
+            log.exception('Error loading config file %s. Logging will be configured with defaults.', config_path)
 
-    if log_dir is not None:
-        log_dir = Path(log_dir)
-        if not log_dir.exists():
-            log_dir.mkdir()
-        elif log_dir.exists() and not log_dir.is_dir():
-            raise NotADirectoryError('The specified log path does not point to a directory.')
+    load_default(debug)
 
-        log_dir = Path(log_dir, 'killer.log')
-        handlers.append(TimedRotatingFileHandler(log_dir, when='midnight'))
 
-    logging.basicConfig(
-        format="%(asctime)s | %(name)-24s | %(levelname)8s | %(message)s",
-        level=logging.DEBUG if debug else logging.INFO,
-        handlers=handlers
-    )
+def load_file(config_path: str):
+    """Loads a logging configuration YAML file."""
+    with open(config_path) as file:
+        config = yaml.load(file)
+        logging.config.dictConfig(config)
+
+
+def load_default(debug: bool = False):
+    if debug:
+        DEFAULT_CONFIG['loggers']['']['level'] = 'DEBUG'
+    logging.config.dictConfig(DEFAULT_CONFIG)

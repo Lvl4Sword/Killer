@@ -60,10 +60,10 @@ def main():
                         help="Prints all info once, without worrying about shutdown.")
     parser.add_argument("-c", "--config", type=str, default=None,
                         help="Path to a configuration file to use")
-    parser.add_argument("-ld", "--log-dir", type=str,
-                        help="Path to where log files should be stored. If not specified, logging to file is disabled.")
+    parser.add_argument("-lc", "--log-config", type=str,
+                        help="Path to logging configuration file.")
     args = parser.parse_args()
-    configure_logging(args.debug, args.log_dir)
+    configure_logging(args.log_config, args.debug)
     execute = get_killer(args)
     while True:
         if POSIX:
