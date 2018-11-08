@@ -11,7 +11,6 @@ setup(
     name='killer',
     version=__version__,
     author=__author__,
-    # author_email='',
     description='Shuts the system down upon disallowed changes',
     # This is what you see on PyPI page
     long_description=Path('README.md').read_text(),
@@ -20,9 +19,9 @@ setup(
     url='https://github.com/Lvl4Sword/Killer',
     project_urls={
         'Discord Server': 'https://discord.gg/python',
+        'Gitter': 'https://gitter.im/KillerPython',
     },
     license=__license__,
-    # data_files=[('killer', ['killer.conf'])],
     packages=find_packages(),
     include_package_data=True,
     zip_safe=True,
@@ -30,9 +29,12 @@ setup(
     entry_points={'console_scripts': ['killer = killer.killer:main']},
     install_requires=Path('requirements.txt').read_text().split(),
     platforms=['Linux', 'Windows'],
-    keywords='killer monitoring watchdog shutdown '
-             'tamper tampering tamper-evident',
-    classifiers=[  # Used by PyPI to classify the project and make it searchable
+    keywords=[
+        'killer', 'kill', 'watch', 'watchdog', 'monitoring', 'monitor',
+        'tamper', 'tampering', 'tamper-evident', 'shutdown', 'poweroff',
+    ],
+    classifiers=[
+        # Used by PyPI to classify the project and make it browsable
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'License :: OSI Approved :: GNU Affero General Public License v3',
