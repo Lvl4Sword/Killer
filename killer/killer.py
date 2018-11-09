@@ -34,10 +34,11 @@ import argparse
 import logging
 import time
 
-from killer import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
+from killer import __version__
+from killer.utils import LOGO, WINDOWS, POSIX
 from killer.utils.log import configure_logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('Killer')
 
 
 def get_killer(args):
@@ -51,19 +52,39 @@ def get_killer(args):
         from killer.killer_windows import KillerWindows
         return KillerWindows(config_path=args.config, debug=args.debug)
     else:
-        raise NotImplementedError
+        # TODO: WSL
+        # TODO: OSX
+        # TODO: BSD
+        raise NotImplementedError("Your platform is not currently supported."
+                                  "If you would like support to be added, or "
+                                  "if your platform is supported and this is "
+                                  "a bug, please open an issue on GitHub!")
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="Killer")
+    parser.add_argument("--version", action="version",
+                        version="%(prog)s {}".format(__version__))
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Prints all info once, without worrying about shutdown.")
     parser.add_argument("-c", "--config", type=str, default=None,
                         help="Path to a configuration file to use")
-    parser.add_argument("-lc", "--log-config", type=str,
+    parser.add_argument("-lc", "--log-config", type=str, default=None,
                         help="Path to logging configuration file.")
+    parser.add_argument("--no-logo", action="store_true",
+                        help="Do not display the startup logo")
     args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+
+    if not args.no_logo:
+        print(LOGO)
+
     configure_logging(args.log_config, args.debug)
+
     execute = get_killer(args)
     while True:
         if POSIX:
