@@ -11,15 +11,16 @@ setup(
     name='killer',
     version=__version__,
     author=__author__,
+    # author_email='',
     description='Shuts the system down upon disallowed changes',
     # This is what you see on PyPI page
-    long_description=Path('README.md').read_text(),
+    long_description=Path('README.md').read_text(encoding='utf-8'),
     # PEP 566, PyPI Warehouse, setuptools>=38.6.0 make markdown possible
     long_description_content_type='text/markdown',
     url='https://github.com/Lvl4Sword/Killer',
     project_urls={
-        'Discord Server': 'https://discord.gg/python',
         'Gitter': 'https://gitter.im/KillerPython',
+        'Discord Server': 'https://discord.gg/python',
     },
     license=__license__,
     packages=find_packages(),
@@ -31,7 +32,7 @@ setup(
             'killer = killer.killer:main'
         ]
     },
-    install_requires=Path('requirements.txt').read_text().split(),
+    install_requires=Path('requirements.txt').read_text(encoding='utf-8').split(),
     tests_require=[
         'coverage',
         'pytest',

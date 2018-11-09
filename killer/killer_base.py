@@ -106,7 +106,8 @@ class KillerBase(ABC):
             current_time = time.localtime()
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
             with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
-                killer_file.write('Time: {0}\nInternet is out.\nFailure: {1}\n\n'.format(formatted_time, warning))
+                killer_file.write('Time: {0}\nInternet is out.\n'
+                                  'Failure: {1}\n\n'.format(formatted_time, warning))
 
     def mail_this(self, warning: str):
         subject = '[ALERT: {0}]'.format(warning)

@@ -54,7 +54,8 @@ class KillerWindows(KillerBase):
         raise NotImplementedError
 
     def detect_ethernet(self):
-        # TODO: Add enum for https://github.com/Lvl4Sword/Killer/wiki/Windows-Connection-Status-Codes
+        # TODO: Add enum for:
+        #   https://github.com/Lvl4Sword/Killer/wiki/Windows-Connection-Status-Codes
         for x in wmi.WMI().Win32_NetworkAdapter():
             if x.NetConnectionStatus is not None:
                 # This can contain quite a few things including Ethernet, Bluetooth, and Wireless
