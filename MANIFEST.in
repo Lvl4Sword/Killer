@@ -1,4 +1,4 @@
-include LICENSE README.md killer.conf requirements.txt
+include LICENSE README.md killer.conf requirements.txt setup.py
 graft killer
 
 prune .github

@@ -17,6 +17,10 @@ class KillerWindows(KillerBase):
         raise NotImplementedError
 
     def detect_usb(self):
+        if 'USB_ID_WHITELIST' not in self.config['windows']:
+            log.warning("No USB devices whitelisted, skipping detection...")
+            return
+
         ids = []
         for each in wmi.WMI().Win32_LogicalDisk():
             if each.Description == 'Removable Disk':
