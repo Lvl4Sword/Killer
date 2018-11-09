@@ -44,6 +44,7 @@ class SystemPowerStatus(ctypes.Structure):
         ('battery_full_life_time', wintypes.DWORD)
     ]
 
+
 def get_power_status() -> SystemPowerStatus:
     """Retrieves the power status of the system.
 

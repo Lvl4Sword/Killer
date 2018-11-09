@@ -52,7 +52,8 @@ def configure_logging(config_path: Optional[str], debug: bool = False):
         try:
             return load_file(config_path)
         except Exception:
-            log.exception('Error loading config file %s. Logging will be configured with defaults.', config_path)
+            log.exception('Error loading config file %s. Logging will '
+                          'be configured with defaults.', config_path)
 
     load_default(debug)
 

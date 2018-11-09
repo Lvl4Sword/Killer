@@ -9,10 +9,10 @@ import fcntl
 from killer.killer_base import KillerBase
 from killer.posix import power
 
-BT_MAC_REGEX = re.compile("(?:[0-9a-fA-F]:?){12}")
-BT_NAME_REGEX = re.compile("[0-9A-Za-z ]+(?=\s\()")
-BT_CONNECTED_REGEX = re.compile("(Connected: [0-1])")
-USB_ID_REGEX = re.compile("([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
+BT_MAC_REGEX = re.compile(r"(?:[0-9a-fA-F]:?){12}")
+BT_NAME_REGEX = re.compile(r"[0-9A-Za-z ]+(?=\s\()")
+BT_CONNECTED_REGEX = re.compile(r"(Connected: [0-1])")
+USB_ID_REGEX = re.compile(r"([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
 
 log = logging.getLogger(__name__)
 
@@ -39,22 +39,27 @@ class KillerPosix(KillerBase):
                 paired_devices = re.findall(BT_MAC_REGEX, bt_command)
                 devices_names = re.findall(BT_NAME_REGEX, bt_command)
                 for each in range(0, len(paired_devices)):
-                    if paired_devices[each] not in json.loads(self.config['linux']['BT_PAIRED_WHITELIST']):
+                    if paired_devices[each] not in json.loads(
+                            self.config['linux']['BT_PAIRED_WHITELIST']):
                         self.kill_the_system('Bluetooth Paired')
                     else:
-                        connected = subprocess.check_output(["bt-device", "-i",
-                                                             paired_devices[each]],
-                                                             shell=False).decode()
+                        connected = subprocess.check_output(
+                            ["bt-device", "-i",
+                             paired_devices[each]],
+                            shell=False).decode()
                         connected_text = re.findall(BT_CONNECTED_REGEX, connected)
-                        if connected_text[0].endswith("1") and paired_devices[each] not in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
+                        if connected_text[0].endswith("1") \
+                                and paired_devices[each] not in json.loads(
+                                    self.config['linux']['BT_CONNECTED_WHITELIST']):
                             self.kill_the_system('Bluetooth Connected MAC Disallowed')
-                        elif connected_text[0].endswith("1") and each in json.loads(self.config['linux']['BT_CONNECTED_WHITELIST']):
-                            if not devices_names[each] == json.loads(self.config['linux']['BT_PAIRED_WHITELIST'])[each]:
+                        elif connected_text[0].endswith("1") and each in json.loads(
+                                self.config['linux']['BT_CONNECTED_WHITELIST']):
+                            if not devices_names[each] == json.loads(
+                                    self.config['linux']['BT_PAIRED_WHITELIST'])[each]:
                                 self.kill_the_system('Bluetooth Connected Name Mismatch')
 
     def detect_usb(self):
-        ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb",
-                                                                shell=False).decode())
+        ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb", shell=False).decode())
         log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
