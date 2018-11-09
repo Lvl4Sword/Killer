@@ -38,7 +38,7 @@ from killer import __version__
 from killer.utils import LOGO, WINDOWS, POSIX
 from killer.utils.log import configure_logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('Killer')
 
 
 def get_killer(args):

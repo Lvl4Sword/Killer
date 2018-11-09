@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from pathlib import Path
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('Base')
 
 
 class KillerBase(ABC):

@@ -24,7 +24,8 @@ DEFAULT_CONFIG = {
     'disable_existing_loggers': False,
     'formatters': {
         'basic': {
-            'format': '%(asctime)s | %(name)-24s | %(levelname)8s | %(message)s'
+            'format': '%(asctime)s | %(name)-10s | %(levelname)-8s | %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         }
     },
     'handlers': {
@@ -32,18 +33,18 @@ DEFAULT_CONFIG = {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'basic',
-            'stream': 'ext://sys.stdout'
+            'stream': 'ext://sys.stdout',
         }
     },
     'loggers': {
         '': {
             'handlers': ['console'],
-            'level': 'INFO'
+            'level': 'INFO',
         }
     }
 }
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('Log')
 
 
 def configure_logging(config_path: Optional[str], debug: bool = False):

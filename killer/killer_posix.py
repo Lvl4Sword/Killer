@@ -14,7 +14,7 @@ BT_NAME_REGEX = re.compile(r"[0-9A-Za-z ]+(?=\s\()")
 BT_CONNECTED_REGEX = re.compile(r"(Connected: [0-1])")
 USB_ID_REGEX = re.compile(r"([0-9a-fA-F]{4}:[0-9a-fA-F]{4})")
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('POSIX')
 
 
 class KillerPosix(KillerBase):

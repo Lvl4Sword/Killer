@@ -6,7 +6,7 @@ import wmi
 from killer.killer_base import KillerBase
 from killer.windows import power
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('Windows')
 
 
 class KillerWindows(KillerBase):
