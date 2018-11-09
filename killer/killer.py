@@ -34,7 +34,7 @@ import argparse
 import logging
 import time
 
-from killer import WINDOWS, LINUX, OSX, BSD, POSIX, WSL
+from killer import __version__, WINDOWS, POSIX  # , LINUX, OSX, BSD, WSL
 from killer.utils.log import configure_logging
 
 log = logging.getLogger(__name__)
@@ -55,7 +55,9 @@ def get_killer(args):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="Killer")
+    parser.add_argument("--version", action="version",
+                        version="%(prog)s {}".format(__version__))
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Prints all info once, without worrying about shutdown.")
     parser.add_argument("-c", "--config", type=str, default=None,
