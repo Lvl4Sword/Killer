@@ -3,3 +3,11 @@ wheel
 twine
 better_exceptions
 pudb;platform_system=="Linux"
+tox
+coverage
+pytest
+pytest-cov
+codespell
+flake8
+check-manifest
+pylint

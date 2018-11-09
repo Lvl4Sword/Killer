@@ -26,8 +26,17 @@ setup(
     include_package_data=True,
     zip_safe=True,
     # These enable commandline usage of the tool
-    entry_points={'console_scripts': ['killer = killer.killer:main']},
+    entry_points={
+        'console_scripts': [
+            'killer = killer.killer:main'
+        ]
+    },
     install_requires=Path('requirements.txt').read_text().split(),
+    tests_require=[
+        'coverage',
+        'pytest',
+        'pytest-cov',
+    ],
     platforms=['Linux', 'Windows'],
     keywords=[
         'killer', 'kill', 'watch', 'watchdog', 'monitoring', 'monitor',
