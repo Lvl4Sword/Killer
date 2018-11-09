@@ -34,7 +34,8 @@ import argparse
 import logging
 import time
 
-from killer import __version__, WINDOWS, POSIX
+from killer import __version__
+from killer.utils import LOGO, WINDOWS, POSIX
 from killer.utils.log import configure_logging
 
 log = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ def get_killer(args):
                                   "a bug, please open an issue on GitHub!")
 
 
-def main():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="Killer")
     parser.add_argument("--version", action="version",
                         version="%(prog)s {}".format(__version__))
@@ -70,8 +71,20 @@ def main():
                         help="Path to a configuration file to use")
     parser.add_argument("-lc", "--log-config", type=str, default=None,
                         help="Path to logging configuration file.")
+    parser.add_argument("--no-logo", action="store_true",
+                        help="Do not display the startup logo")
     args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+
+    if not args.no_logo:
+        print(LOGO)
+
     configure_logging(args.log_config, args.debug)
+
     execute = get_killer(args)
     while True:
         if POSIX:
