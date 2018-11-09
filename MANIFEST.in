@@ -1,6 +1,6 @@
-include LICENSE README.md killer.conf
+include LICENSE README.md killer.conf requirements.txt
 graft killer
 
 prune .github
 global-exclude *.py[cod] __pycache__ *.so *.class
-exclude requirements.txt dev-requirements.txt tox.ini
+exclude dev-requirements.txt tox.ini
