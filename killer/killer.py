@@ -34,7 +34,7 @@ import argparse
 import logging
 import time
 
-from killer import __version__, WINDOWS, POSIX  # , LINUX, OSX, BSD, WSL
+from killer import __version__, WINDOWS, POSIX
 from killer.utils.log import configure_logging
 
 log = logging.getLogger(__name__)
@@ -51,7 +51,13 @@ def get_killer(args):
         from killer.killer_windows import KillerWindows
         return KillerWindows(config_path=args.config, debug=args.debug)
     else:
-        raise NotImplementedError
+        # TODO: WSL
+        # TODO: OSX
+        # TODO: BSD
+        raise NotImplementedError("Your platform is not currently supported."
+                                  "If you would like support to be added, or "
+                                  "if your platform is supported and this is "
+                                  "a bug, please open an issue on GitHub!")
 
 
 def main():
