@@ -38,6 +38,7 @@ setup(
         'pytest',
         'pytest-cov',
     ],
+    python_requires='>=3.5',
     platforms=['Linux', 'Windows'],
     keywords=[
         'killer', 'kill', 'watch', 'watchdog', 'monitoring', 'monitor',
