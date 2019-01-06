@@ -18,7 +18,7 @@
 
 [![PyPI - Current version](https://img.shields.io/pypi/v/killer.svg)](https://pypi.org/project/killer/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/killer.svg)](https://pypistats.org/packages/killer)
-[![Join the chat at https://gitter.im/KillerPython/Lobby](https://badges.gitter.im/KillerPython/Lobby.svg)](https://gitter.im/KillerPython/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join irc.freenode.net #killer channel](https://img.shields.io/badge/irc-killer-green.svg)](https://webchat.freenode.net)
 
 
 # Installation and usage
