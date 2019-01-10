@@ -97,7 +97,7 @@ def main():
         if execute.DEBUG:
             break
         else:
-            time.sleep(execute.config.getint('global', 'REST'))
+            time.sleep(float(execute.config['global']['examination_interval']))
 
 
 if __name__ == '__main__':

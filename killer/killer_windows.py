@@ -17,7 +17,7 @@ class KillerWindows(KillerBase):
         raise NotImplementedError
 
     def detect_usb(self):
-        if 'USB_ID_WHITELIST' not in self.config['windows']:
+        if not self.config['windows']['usb_id_whitelist']:
             log.warning("No USB devices whitelisted, skipping detection...")
             return
 
@@ -29,9 +29,9 @@ class KillerWindows(KillerBase):
         log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
-            if each_device not in self.config['windows']['USB_ID_WHITELIST']:
+            if each_device not in self.config['windows']['usb_id_whitelist']:
                 self.kill_the_system('USB Allowed Whitelist')
-        for device in self.config['windows']['USB_CONNECTED_WHITELIST']:
+        for device in self.config['windows']['usb_connected_whitelist']:
             if device not in ids:
                 self.kill_the_system('USB Connected Whitelist')
 
@@ -65,7 +65,7 @@ class KillerWindows(KillerBase):
                 # This can contain quite a few things including Ethernet, Bluetooth, and Wireless
                 log.debug('%s %d %s', x.MacAddress, x.NetConnectionStatus, x.Name)
 
-                if x.MacAddress == self.config['windows']['ETHERNET_INTERFACE']:
+                if x.MacAddress == self.config['windows']['ethernet_interface']:
                     if x.NetConnectionStatus == 7:
                         self.kill_the_system('Ethernet')
 
