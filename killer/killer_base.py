@@ -1,4 +1,3 @@
-import configparser
 import json
 import logging
 import smtplib
@@ -15,27 +14,33 @@ log = logging.getLogger('Base')
 
 class KillerBase(ABC):
     CONFIG_SEARCH_PATHS = [Path.cwd(), Path.home(), Path(__file__).parent]
+    CONFIG_FILENAME = "killer_config.json"
 
     def __init__(self, config_path: str = None, debug: bool = False):
         socket.setdefaulttimeout(3)
         self.DEBUG = debug
         if config_path is None:
             for path in self.CONFIG_SEARCH_PATHS:
-                log.debug("Searching for 'killer.conf' in: %s", str(path))
-                file = path / 'killer.conf'
+                log.debug("Searching for '%s' in: %s", self.CONFIG_FILENAME, str(path))
+                file = path / self.CONFIG_FILENAME
                 if file.exists():
                     config_path = file
                     break
             if config_path is None:
-                log.critical("Failed to find configuration file 'killer.conf'")
+                log.critical("Failed to find configuration file '%s'", self.CONFIG_FILENAME)
                 sys.exit(1)
         self.config_file = Path(config_path).resolve()
         if not self.config_file.exists():
             log.critical("Could not find configuration file %s", str(self.config_file))
             sys.exit(1)
-        self.config = configparser.ConfigParser()
-        self.config.read(
-            str(self.config_file))  # Python 3.5 requires str() conversion
+        try:
+            with self.config_file.open(encoding='utf-8') as conf_fp:
+                self.config = json.load(conf_fp)
+        except json.JSONDecodeError as ex:
+            log.critical("Failed to parse configuration: %s", str(ex))
+        # self.config = configparser.ConfigParser()
+        # self.config.read(
+        #     str(self.config_file))  # Python 3.5 requires str() conversion
 
     @abstractmethod
     def detect_bt(self):
@@ -105,11 +110,12 @@ class KillerBase(ABC):
         except socket.gaierror:
             current_time = time.localtime()
             formatted_time = time.strftime('%Y-%m-%d %I:%M:%S%p', current_time)
-            with open(self.config['global']['KILLER_FILE'], 'a') as killer_file:
+            with open(self.config['global']['killer_file'], 'a', encoding='utf-8') as killer_file:
                 killer_file.write('Time: {0}\nInternet is out.\n'
                                   'Failure: {1}\n\n'.format(formatted_time, warning))
 
     def mail_this(self, warning: str):
+        email_config = self.config["email"]
         subject = '[ALERT: {0}]'.format(warning)
 
         current_time = time.localtime()
@@ -118,11 +124,11 @@ class KillerBase(ABC):
         content = 'Time: {0}\nWarning: {1}'.format(formatted_time, warning)
         msg = MIMEText(content, 'plain')
         msg['Subject'] = subject
-        msg['From'] = self.config["email"]["SENDER"]
+        msg['From'] = email_config["sender"]
         ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
         ssl_context.verify_mode = ssl.CERT_REQUIRED
         ssl_context.check_hostname = True
-        ssl_context.set_ciphers(self.config["email"]["CIPHER_CHOICE"])
+        ssl_context.set_ciphers(email_config["cipher_choice"])
         ssl_context.options &= ~ssl.HAS_SNI
         ssl_context.options &= ~ssl.OP_NO_COMPRESSION
         # No need to explicitly disable SSLv* as it's already been done
@@ -131,14 +137,14 @@ class KillerBase(ABC):
         ssl_context.options &= ~ssl.OP_NO_TLSv1_1
         ssl_context.options &= ~ssl.OP_SINGLE_DH_USE
         ssl_context.options &= ~ssl.OP_SINGLE_ECDH_USE
-        conn = smtplib.SMTP_SSL(self.config["email"]["SMTP_SERVER"],
-                                port=self.config["email"]["SMTP_PORT"],
+        conn = smtplib.SMTP_SSL(email_config["smtp_server"],
+                                port=email_config["smtp_port"],
                                 context=ssl_context)
-        conn.esmtp_features['auth'] = self.config["email"]["LOGIN_AUTH"]
-        conn.login(self.config["email"]["SENDER"], self.config["email"]["SENDER_PASSWORD"])
+        conn.esmtp_features['auth'] = email_config["login_auth"]
+        conn.login(email_config["sender"], email_config["sender_password"])
         try:
-            for each in json.loads(self.config["email"]["DESTINATION"]):
-                conn.sendmail(self.config["email"]["SENDER"], each, msg.as_string())
+            for each in json.loads(email_config["destination"]):
+                conn.sendmail(email_config["sender"], each, msg.as_string())
         except socket.timeout:
             raise socket.gaierror
         finally:

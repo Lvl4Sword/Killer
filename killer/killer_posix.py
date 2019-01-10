@@ -22,6 +22,7 @@ class KillerPosix(KillerBase):
         super().__init__(config_path, debug)
 
     def detect_bt(self):
+        bt_config = self.config['bluetooth']
         try:
             bt_command = subprocess.check_output(["bt-device", "--list"],
                                                  shell=False).decode()
@@ -40,7 +41,7 @@ class KillerPosix(KillerBase):
                 devices_names = re.findall(BT_NAME_REGEX, bt_command)
                 for each in range(0, len(paired_devices)):
                     if paired_devices[each] not in json.loads(
-                            self.config['linux']['BT_PAIRED_WHITELIST']):
+                            bt_config['paired_whitelist']):
                         self.kill_the_system('Bluetooth Paired')
                     else:
                         connected = subprocess.check_output(
@@ -50,12 +51,12 @@ class KillerPosix(KillerBase):
                         connected_text = re.findall(BT_CONNECTED_REGEX, connected)
                         if connected_text[0].endswith("1") \
                                 and paired_devices[each] not in json.loads(
-                                    self.config['linux']['BT_CONNECTED_WHITELIST']):
+                                    bt_config['connected_whitelist']):
                             self.kill_the_system('Bluetooth Connected MAC Disallowed')
                         elif connected_text[0].endswith("1") and each in json.loads(
-                                self.config['linux']['BT_CONNECTED_WHITELIST']):
+                                bt_config['connected_whitelist']):
                             if not devices_names[each] == json.loads(
-                                    self.config['linux']['BT_PAIRED_WHITELIST'])[each]:
+                                    bt_config['paired_whitelist'])[each]:
                                 self.kill_the_system('Bluetooth Connected Name Mismatch')
 
     def detect_usb(self):
@@ -63,9 +64,9 @@ class KillerPosix(KillerBase):
         log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
-            if each_device not in json.loads(self.config['linux']['USB_ID_WHITELIST']):
+            if each_device not in json.loads(self.config['linux']['usb_id_whitelist']):
                 self.kill_the_system('USB Allowed Whitelist')
-        for device in json.loads(self.config['linux']['USB_CONNECTED_WHITELIST']):
+        for device in json.loads(self.config['linux']['usb_connected_whitelist']):
             if device not in ids:
                 self.kill_the_system('USB Connected Whitelist')
 
@@ -74,7 +75,7 @@ class KillerPosix(KillerBase):
             devices = ', '.join(power.get_devices(power.DeviceType.MAINS))
             log.debug('AC: %s', devices if devices else 'none detected')
 
-        if not power.is_online(self.config['linux']['AC_FILE']):
+        if not power.is_online(self.config['linux']['ac_file']):
             self.kill_the_system('AC')
 
     def detect_battery(self):
@@ -83,13 +84,13 @@ class KillerPosix(KillerBase):
             log.debug('Battery: %s', devices if devices else 'none detected')
 
         try:
-            if not power.is_present(self.config['linux']['BATTERY_FILE']):
+            if not power.is_present(self.config['linux']['battery_file']):
                 self.kill_the_system('Battery')
         except FileNotFoundError:
             pass
 
     def detect_tray(self):
-        disk_tray = self.config['linux']['CDROM_DRIVE']
+        disk_tray = self.config['linux']['cdrom_drive']
         fd = os.open(disk_tray, os.O_RDONLY | os.O_NONBLOCK)
         rv = fcntl.ioctl(fd, 0x5326)
         os.close(fd)
@@ -100,7 +101,7 @@ class KillerPosix(KillerBase):
             self.kill_the_system('CD Tray')
 
     def detect_ethernet(self):
-        with open(self.config['linux']['ETHERNET_CONNECTED']) as ethernet:
+        with open(self.config['linux']['ethernet_connected_file']) as ethernet:
             connected = int(ethernet.readline().strip())
 
         log.debug('Ethernet: %d', connected)
