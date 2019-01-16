@@ -1,0 +1,82 @@
+# AppVeyor.yml from https://github.com/ogrisel/python-appveyor-demo
+# License: CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/
+
+# Not a C#/etc project
+build: off
+
+environment:
+  matrix:
+    # Pre-installed Python versions, which Appveyor may upgrade to
+    # a later point release.
+    # See: https://www.appveyor.com/docs/installed-software#python
+    # NOTE (ghostofgoes): no point in testing 3.5 on Windows, since users can
+    #                     easily install (and we require) 3.6 or 3.7.
+    - PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6.x"
+      PYTHON_ARCH: "32"
+      TOXENV: py36
+
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.x"
+      PYTHON_ARCH: "64"
+      TOXENV: py36
+
+    - PYTHON: "C:\\Python37"
+      PYTHON_VERSION: "3.7.x"
+      PYTHON_ARCH: "32"
+      TOXENV: py37
+
+    - PYTHON: "C:\\Python37-x64"
+      PYTHON_VERSION: "3.7.x"
+      PYTHON_ARCH: "64"
+      TOXENV: py37
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+
+install:
+  # If there is a newer build queued for the same PR, cancel this one.
+  # The AppVeyor 'rollout builds' option is supposed to serve the same
+  # purpose but it is problematic because it tends to cancel builds pushed
+  # directly to master instead of just PR builds (or the converse).
+  # credits: JuliaLang developers.
+  - ps: if ($env:APPVEYOR_PULL_REQUEST_NUMBER -and $env:APPVEYOR_BUILD_NUMBER -ne ((Invoke-RestMethod `
+        https://ci.appveyor.com/api/projects/$env:APPVEYOR_ACCOUNT_NAME/$env:APPVEYOR_PROJECT_SLUG/history?recordsNumber=50).builds | `
+        Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
+          throw "There are newer queued builds for this pull request, failing early." }
+
+  # Install Python (from the official .msi of https://python.org) and pip when
+  # not already installed.
+  - ps: if (-not(Test-Path($env:PYTHON))) { & scripts\install.ps1 }
+
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - "python -c \"import sys; print(sys.platform)\""
+  - "python -c \"import sys; print(sys.version)\""
+  - "python -c \"import os; print(os.name)\""
+  - "python -c \"import platform; print(platform.version())\""
+  - "python -c \"import platform; print(platform.uname())\""
+
+  # System network information
+  - "getmac /fo table /v"
+  - "ipconfig /all"
+  - "arp -a"
+
+  # Upgrade to the latest version of pip to avoid it displaying warnings
+  # about it being out of date.
+  - "python -m pip install --upgrade pip"
+  - "python -m pip install --upgrade setuptools wheel tox flake8 codespell check-manifest"
+
+test_script:
+- tox
+# No point in running the linting tests on Windows too
+
+cache:
+- '%LOCALAPPDATA%\pip\cache'
+- '%USERPROFILE%\.cache\pre-commit'
