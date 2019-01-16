@@ -8,7 +8,7 @@ stages:
 group: travis_latest
 language: python
 dist: xenial
-sudo: true  # TODO: would false work fine?
+sudo: true  # TODO: would false work fine? (it would run faster)
 cache: pip
 
 env:
@@ -32,6 +32,15 @@ matrix:
   - python: 3.8-dev
   - os: osx
 
+before_install:
+- python -c 'import sys; print(sys.version)'
+- python -c 'import sys; print(sys.platform)'
+- python -c 'import os; print(os.name)'
+- python -c 'import platform; print(platform.version())'
+- python -c 'import platform; print(platform.uname())'
+- arp -a
+- ifconfig
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source ./scripts/.travis-osx; fi
 
 install:
 - pip install -U tox
