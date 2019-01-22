@@ -1,6 +1,8 @@
 import logging
 import subprocess
 
+import win32file
+import win32api
 import wmi
 
 from killer.killer_base import KillerBase
@@ -22,9 +24,12 @@ class KillerWindows(KillerBase):
             return
 
         ids = []
-        for each in wmi.WMI().Win32_LogicalDisk():
-            if each.Description == 'Removable Disk':
-                ids.append(each.VolumeSerialNumber)
+
+        for each in win32api.GetLogicalDriveStrings().split('\\\x00'):
+            if win32file.GetDriveType(each) == win32file.DRIVE_REMOVABLE:
+                decimal_id = int(win32api.GetVolumeInformation(each[1])
+                hex_id = '%X' % (0x100000000 + decimal_id)
+                ids.append(hex_id)
 
         log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
