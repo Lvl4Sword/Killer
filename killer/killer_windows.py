@@ -1,13 +1,16 @@
 import logging
 import subprocess
 
-import wmi
+import win32file
+import win32api
 
 from killer.killer_base import KillerBase
 from killer.windows import power
 
 log = logging.getLogger('Windows')
 
+MAC_ADDRESS_REGEX = re.compile(r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})')
+MEDIA_STATE_REGEX = re.compile(r'Media State ([^:]+): (Media disconnected)')
 
 class KillerWindows(KillerBase):
     def __init__(self, config_path: str = None, debug: bool = False):
@@ -22,9 +25,12 @@ class KillerWindows(KillerBase):
             return
 
         ids = []
-        for each in wmi.WMI().Win32_LogicalDisk():
-            if each.Description == 'Removable Disk':
-                ids.append(each.VolumeSerialNumber)
+
+        for each in win32api.GetLogicalDriveStrings().split('\\\x00'):
+            if win32file.GetDriveType(each) == win32file.DRIVE_REMOVABLE:
+                decimal_id = win32api.GetVolumeInformation(each[1])
+                hex_id = '%X' % (0x100000000 + decimal_id)
+                ids.append(hex_id)
 
         log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
@@ -60,14 +66,14 @@ class KillerWindows(KillerBase):
     def detect_ethernet(self):
         # TODO: Add enum for:
         #   https://github.com/Lvl4Sword/Killer/wiki/Windows-Connection-Status-Codes
-        for x in wmi.WMI().Win32_NetworkAdapter():
-            if x.NetConnectionStatus is not None:
-                # This can contain quite a few things including Ethernet, Bluetooth, and Wireless
-                log.debug('%s %d %s', x.MacAddress, x.NetConnectionStatus, x.Name)
-
-                if x.MacAddress == self.config['windows']['ethernet_interface']:
-                    if x.NetConnectionStatus == 7:
-                        self.kill_the_system('Ethernet')
+        ipconfig_cmd = subprocess.check_output(['ipconfig', '/all']).decode()
+        for each in ipconfig_cmd.split('\r\n\r\n'):
+            mac_address = re.findall(MAC_ADDRESS_REGEX, each)
+            if mac_address == self.config['windows']['ethernet_interface']:
+                log.debug('MAC Address Detected: %s', mac_address)
+                media_state = re.findall(MEDIA_STATE_REGEX, each)
+                if media_state:
+                    self.kill_the_system('Ethernet')
 
     def kill_the_system(self, warning: str):
         super().kill_the_system(warning)
