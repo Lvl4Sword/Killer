@@ -19,8 +19,8 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/Lvl4Sword/Killer',
     project_urls={
-        'Gitter': 'https://gitter.im/KillerPython',
-        'Discord Server': 'https://discord.gg/python',
+        'Discord Server': 'https://discord.gg/bTRxxMJ',
+        'IRC': 'https://webchat.freenode.net/?channels=%23killer',
     },
     license=__license__,
     packages=find_packages(),
