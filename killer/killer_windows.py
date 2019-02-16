@@ -1,8 +1,9 @@
 import logging
+import re
 import subprocess
 
-import win32file
 import win32api
+import win32file
 
 from killer.killer_base import KillerBase
 from killer.windows import power
@@ -11,6 +12,7 @@ log = logging.getLogger('Windows')
 
 MAC_ADDRESS_REGEX = re.compile(r'([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})')
 MEDIA_STATE_REGEX = re.compile(r'Media State ([^:]+): (Media disconnected)')
+
 
 class KillerWindows(KillerBase):
     def __init__(self, config_path: str = None, debug: bool = False):
