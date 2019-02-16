@@ -5,6 +5,7 @@ import socket
 import ssl
 import sys
 import time
+import pkgutil
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -13,34 +14,39 @@ log = logging.getLogger('Base')
 
 
 class KillerBase(ABC):
-    CONFIG_SEARCH_PATHS = [Path.cwd(), Path.home(), Path(__file__).parent]
+    CONFIG_SEARCH_PATHS = [Path.cwd(), Path.home()]
     CONFIG_FILENAME = "killer_config.json"
 
     def __init__(self, config_path: str = None, debug: bool = False):
         socket.setdefaulttimeout(3)
         self.DEBUG = debug
+        self._load_config(config_path)
+
+    def _load_config(self, config_path: str = None):
         if config_path is None:
+            config_file = None
             for path in self.CONFIG_SEARCH_PATHS:
                 log.debug("Searching for '%s' in: %s", self.CONFIG_FILENAME, str(path))
                 file = path / self.CONFIG_FILENAME
                 if file.exists():
-                    config_path = file
+                    config_file = file
                     break
-            if config_path is None:
-                log.critical("Failed to find configuration file '%s'", self.CONFIG_FILENAME)
+        else:
+            config_file = Path(config_path)
+            if not config_file.exists():
+                log.critical("Configuration file '%s' does not exist", str(config_file))
                 sys.exit(1)
-        self.config_file = Path(config_path).resolve()
-        if not self.config_file.exists():
-            log.critical("Could not find configuration file %s", str(self.config_file))
-            sys.exit(1)
+
+        if config_file is None:
+            log.warning("Didn't find a user-specified configuration, loading the default...")
+            data = pkgutil.get_data('killer', 'killer_config.json')
+        else:
+            data = config_file.read_text(encoding='utf-8')
         try:
-            with self.config_file.open(encoding='utf-8') as conf_fp:
-                self.config = json.load(conf_fp)
+            self.config = json.loads(data)
         except json.JSONDecodeError as ex:
             log.critical("Failed to parse configuration: %s", str(ex))
-        # self.config = configparser.ConfigParser()
-        # self.config.read(
-        #     str(self.config_file))  # Python 3.5 requires str() conversion
+            sys.exit(1)
 
     @abstractmethod
     def detect_bt(self):
