@@ -14,8 +14,14 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
 import ctypes
+import sys
 from ctypes import wintypes
-from enum import Enum, Flag
+
+try:
+    from enum import Enum, Flag
+except ImportError:
+    print("Killer requires Python 3.6+ on Windows")
+    sys.exit(1)
 
 
 class ACLineStatus(Enum):
