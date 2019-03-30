@@ -19,7 +19,7 @@
 [![PyPI - Current version](https://img.shields.io/pypi/v/killer.svg)](https://pypi.org/project/killer/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/killer.svg)](https://pypistats.org/packages/killer)
 
-[![Killer Discord Channel](https://img.shields.io/badge/discord-killer-brightgreen.svg)](https://discord.gg/jWgA8Wj)
+[![Killer Discord Channel](https://img.shields.io/badge/discord-killer-brightgreen.svg)](https://discord.gg/jKH5bXg)
 [![Join irc.freenode.net #killer channel](https://img.shields.io/badge/irc-killer-brightgreen.svg)](https://webchat.freenode.net/?channels=%23killer)
 
 
