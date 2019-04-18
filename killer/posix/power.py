@@ -40,7 +40,7 @@ def get_devices(device_type: DeviceType) -> Iterator[str]:
     :rtype: Iterator[str]
     """
     for device in BASE_PATH.iterdir():
-        with open(Path(device, 'type')) as type_file:
+        with open(str(Path(device, 'type'))) as type_file:
             if type_file.readline().strip() == device_type.value:
                 yield device.name
 
@@ -67,5 +67,5 @@ def is_online(device_path: Union[Path, str]) -> bool:
 
 def _get_property(device_path: Union[Path, str], property_name: str) -> str:
     """Gets the given property for a device."""
-    with open(Path(device_path, property_name)) as file:
+    with open(str(Path(device_path, property_name))) as file:
         return file.readline().strip()
