@@ -26,8 +26,8 @@ class KillerPosix(KillerBase):
         try:
             bt_command = subprocess.check_output(["bt-device", "--list"],
                                                  shell=False).decode()
-        except IOError:
-            log.debug('Bluetooth: none detected')
+        except Exception as e:
+            log.debug('Bluetooth: none detected ({0})'.format(e))
         else:
             if self.DEBUG:
                 # TODO: Clean up
