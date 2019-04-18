@@ -47,6 +47,8 @@ class KillerBase(ABC):
         except json.JSONDecodeError as ex:
             log.critical("Failed to parse configuration: %s", str(ex))
             sys.exit(1)
+        except TypeError:
+            self.config = json.loads(data.decode())
 
     @abstractmethod
     def detect_bt(self):
