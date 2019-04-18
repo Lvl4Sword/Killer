@@ -62,7 +62,7 @@ class KillerPosix(KillerBase):
         for each_device in ids:
             if each_device not in self.config['linux']['usb_id_whitelist']:
                 self.kill_the_system('USB Allowed Whitelist')
-        for device in self.config['linux']['usb_connected_whitelist']):
+        for device in self.config['linux']['usb_connected_whitelist']:
             if device not in ids:
                 self.kill_the_system('USB Connected Whitelist')
 
