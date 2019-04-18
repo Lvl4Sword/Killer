@@ -40,8 +40,7 @@ class KillerPosix(KillerBase):
                 paired_devices = re.findall(BT_MAC_REGEX, bt_command)
                 devices_names = re.findall(BT_NAME_REGEX, bt_command)
                 for each in range(0, len(paired_devices)):
-                    if paired_devices[each] not in json.loads(
-                            bt_config['paired_whitelist']):
+                    if paired_devices[each] not in bt_config['paired_whitelist']:
                         self.kill_the_system('Bluetooth Paired')
                     else:
                         connected = subprocess.check_output(
@@ -50,13 +49,10 @@ class KillerPosix(KillerBase):
                             shell=False).decode()
                         connected_text = re.findall(BT_CONNECTED_REGEX, connected)
                         if connected_text[0].endswith("1") \
-                                and paired_devices[each] not in json.loads(
-                                    bt_config['connected_whitelist']):
+                                and paired_devices[each] not in bt_config['connected_whitelist']:
                             self.kill_the_system('Bluetooth Connected MAC Disallowed')
-                        elif connected_text[0].endswith("1") and each in json.loads(
-                                bt_config['connected_whitelist']):
-                            if not devices_names[each] == json.loads(
-                                    bt_config['paired_whitelist'])[each]:
+                        elif connected_text[0].endswith("1") and each in bt_config['connected_whitelist']:
+                            if not devices_names[each] == bt_config['paired_whitelist'][each]:
                                 self.kill_the_system('Bluetooth Connected Name Mismatch')
 
     def detect_usb(self):
@@ -64,9 +60,9 @@ class KillerPosix(KillerBase):
         log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
-            if each_device not in json.loads(self.config['linux']['usb_id_whitelist']):
+            if each_device not in self.config['linux']['usb_id_whitelist']:
                 self.kill_the_system('USB Allowed Whitelist')
-        for device in json.loads(self.config['linux']['usb_connected_whitelist']):
+        for device in self.config['linux']['usb_connected_whitelist']):
             if device not in ids:
                 self.kill_the_system('USB Connected Whitelist')
 
