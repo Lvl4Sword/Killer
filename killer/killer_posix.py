@@ -27,21 +27,21 @@ class KillerPosix(KillerBase):
             bt_command = subprocess.check_output(["bt-device", "--list"],
                                                  shell=False).decode()
         except Exception as e:
-            log.debug('Bluetooth: none detected ({0})'.format(e))
+            log.debug('Bluetooth: none detected (exception: {0})'.format(e))
         else:
             if self.DEBUG:
                 # TODO: Clean up
                 bt_devices = bt_command.split('\n')
                 if len(bt_devices) == 3 and bt_devices[2] == '':
-                    log.debug('Bluetooth: %s', bt_command.split('\n')[1])
+                    log.debug('Bluetooth:', bt_command.split('\n')[1])
                 else:
-                    log.debug('Bluetooth: %s', ', '.join(bt_command.split('\n')[1:]))
+                    log.debug('Bluetooth:', ', '.join(bt_command.split('\n')[1:]))
             else:
                 paired_devices = re.findall(BT_MAC_REGEX, bt_command)
                 devices_names = re.findall(BT_NAME_REGEX, bt_command)
                 for each in range(0, len(paired_devices)):
                     if paired_devices[each] not in bt_config['paired_whitelist']:
-                        self.kill_the_system('Bluetooth Paired')
+                        self.kill_the_system('Bluetooth Paired: {0}'.format(paired_devices[each]))
                     else:
                         connected = subprocess.check_output(
                             ["bt-device", "-i",
@@ -50,26 +50,30 @@ class KillerPosix(KillerBase):
                         connected_text = re.findall(BT_CONNECTED_REGEX, connected)
                         if connected_text[0].endswith("1") \
                                 and paired_devices[each] not in bt_config['connected_whitelist']:
-                            self.kill_the_system('Bluetooth Connected MAC Disallowed')
+                            self.kill_the_system('Bluetooth Connected MAC Disallowed: {0}'.format(paired_devices[each]))
                         elif connected_text[0].endswith("1") and each in bt_config['connected_whitelist']:
-                            if not devices_names[each] == bt_config['paired_whitelist'][each]:
-                                self.kill_the_system('Bluetooth Connected Name Mismatch')
+                            if devices_names[each] != bt_config['paired_whitelist'][each]:
+                                self.kill_the_system('Bluetooth Connected Name Mismatch: {0}'.format(devices_names[each]))
 
     def detect_usb(self):
         ids = re.findall(USB_ID_REGEX, subprocess.check_output("lsusb", shell=False).decode())
-        log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
+        log.debug('USB:', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
             if each_device not in self.config['linux']['usb_id_whitelist']:
-                self.kill_the_system('USB Allowed Whitelist')
+                 self.kill_the_system('USB Allowed Whitelist: {0}'.format(each_device))
+            else:
+                if self.config['linux']['usb_id_whitelist'][each_device] != ids.count(each_device):
+                    self.kill_the_system('USB Duplicate Device: {0}'.format(each_device))
+
         for device in self.config['linux']['usb_connected_whitelist']:
             if device not in ids:
-                self.kill_the_system('USB Connected Whitelist')
+                self.kill_the_system('USB Connected Whitelist: {0}'.format(device))
 
     def detect_ac(self):
         if self.DEBUG:
             devices = ', '.join(power.get_devices(power.DeviceType.MAINS))
-            log.debug('AC: %s', devices if devices else 'none detected')
+            log.debug('AC:', devices if devices else 'none detected')
 
         if not power.is_online(self.config['linux']['ac_file']):
             self.kill_the_system('AC')
@@ -77,7 +81,7 @@ class KillerPosix(KillerBase):
     def detect_battery(self):
         if self.DEBUG:
             devices = ', '.join(power.get_devices(power.DeviceType.BATTERY))
-            log.debug('Battery: %s', devices if devices else 'none detected')
+            log.debug('Battery:', devices if devices else 'none detected')
 
         try:
             if not power.is_present(self.config['linux']['battery_file']):
@@ -91,7 +95,7 @@ class KillerPosix(KillerBase):
         rv = fcntl.ioctl(fd, 0x5326)
         os.close(fd)
 
-        log.debug('CD Tray: %d', rv)
+        log.debug('CD Tray:', rv)
 
         if rv != 1:
             self.kill_the_system('CD Tray')
@@ -100,7 +104,7 @@ class KillerPosix(KillerBase):
         with open(self.config['linux']['ethernet_connected_file']) as ethernet:
             connected = int(ethernet.readline().strip())
 
-        log.debug('Ethernet: %d', connected)
+        log.debug('Ethernet:', connected)
 
         if connected:
             self.kill_the_system('Ethernet')
