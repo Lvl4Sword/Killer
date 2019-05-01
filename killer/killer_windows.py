@@ -22,6 +22,8 @@ class KillerWindows(KillerBase):
         raise NotImplementedError
 
     def detect_usb(self):
+        # TODO - Should this return if nothing is in the whitelist?
+        # Feels like it should be done elsewhere.
         if not self.config['windows']['usb_id_whitelist']:
             log.warning("No USB devices whitelisted, skipping detection...")
             return
@@ -34,20 +36,26 @@ class KillerWindows(KillerBase):
                 hex_id = '%X' % (0x100000000 + decimal_id)
                 ids.append(hex_id)
 
-        log.debug('USB: %s', ', '.join(ids) if ids else 'none detected')
+        log.debug('USB:', ', '.join(ids) if ids else 'none detected')
 
         for each_device in ids:
             if each_device not in self.config['windows']['usb_id_whitelist']:
-                self.kill_the_system('USB Allowed Whitelist')
+                self.kill_the_system('USB Allowed Whitelist: {0}'.format(each_device))
+            else:
+                if self.config['windows']['usb_id_whitelist'][each_device] != ids.count(each_device):
+                    self.kill_the_system('USB Duplicate Device: {0}'.format(each_device))
         for device in self.config['windows']['usb_connected_whitelist']:
             if device not in ids:
-                self.kill_the_system('USB Connected Whitelist')
+                self.kill_the_system('USB Connected Whitelist: {0}'.format(device))
+            else:
+                if self.config['windows']['usb_connected_whitelist'][each_device] != ids.count(each_device):
+                    self.kill_the_system('USB Whitelist Duplicate Device: {0}'.format(each_device))
 
     def detect_ac(self):
         status = power.get_power_status().ac_line_status
         status = power.ACLineStatus(status)
 
-        log.debug('AC: %s', status.name)
+        log.debug('AC:', status.name)
 
         if status != power.ACLineStatus.ONLINE:
             # If not connected to power, shutdown
@@ -57,7 +65,7 @@ class KillerWindows(KillerBase):
         status = power.get_power_status().battery_flag
         status = power.BatteryFlags(status)
 
-        log.debug('Battery: %s', status)
+        log.debug('Battery:', status)
 
         if status == power.BatteryFlags.NONE:
             self.kill_the_system('Battery')
@@ -72,7 +80,7 @@ class KillerWindows(KillerBase):
         for each in ipconfig_cmd.split('\r\n\r\n'):
             mac_address = re.findall(MAC_ADDRESS_REGEX, each)
             if mac_address == self.config['windows']['ethernet_interface']:
-                log.debug('MAC Address Detected: %s', mac_address)
+                log.debug('MAC Address:', mac_address)
                 media_state = re.findall(MEDIA_STATE_REGEX, each)
                 if media_state:
                     self.kill_the_system('Ethernet')
