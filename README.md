@@ -1,3 +1,9 @@
+# Attention!
+
+The project requires testing and development from individuals with a Mac.
+If you're interested in assisting with this please contact one of the devs
+within the Discord or IRC channel listed below
+
 ```
            _  _  _  _ _
           | |/ /(_)| | |
