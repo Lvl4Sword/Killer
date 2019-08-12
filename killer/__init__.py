@@ -15,4 +15,4 @@
 
 __author__ = "Lvl4Sword, GhostOfGoes, MarkKoz"
 __license__ = "AGPL 3.0"
-__version__ = "0.7.0"
+__version__ = "0.7.1"
