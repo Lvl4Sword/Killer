@@ -28,7 +28,7 @@ within the Discord or IRC channel listed below
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/killer.svg)](https://pypistats.org/packages/killer)
 
 [![Killer Discord Channel](https://img.shields.io/badge/discord-killer-brightgreen.svg)](https://discord.gg/T5YYvw8AVq)
-[![Join irc.freenode.net #killer channel](https://img.shields.io/badge/irc-killer-brightgreen.svg)](https://webchat.freenode.net/?channels=%23killer)
+![irc.libera.chat #killer](https://img.shields.io/badge/irc-libera.chat_killer-brightgreen.svg)
 
 
 # Installation and usage
