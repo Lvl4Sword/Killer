@@ -1,8 +1,0 @@
-include LICENSE README.md killer_config.json requirements.txt setup.py
-graft killer
-
-prune .github
-prune scripts
-
-global-exclude *.py[cod] __pycache__ *.so *.class
-exclude dev-requirements.txt tox.ini appveyor.yml Makefile

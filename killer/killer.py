@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""If there are any unrecognized bluetooth or USB devices,
-laptop power is unplugged, laptop battery is removed while on AC,
-or the disk tray is tampered with, shut the computer down!
-"""
 #         _  _  _  _ _
 #        | |/ /(_)| | |
 #        |   /  _ | | | ____ _ _
@@ -13,8 +9,6 @@ or the disk tray is tampered with, shut the computer down!
 # \                       | _   _   _  \
 #  `.                  ___|____________/
 #    ``````````````````
-
-
 # <https://github.com/Lvl4Sword/Killer>
 #
 # This program is distributed in the hope that it will be useful,
@@ -38,6 +32,10 @@ from killer import __version__
 from killer.utils import LOGO, WINDOWS, POSIX
 from killer.utils.log import configure_logging
 
+__author__ = "Lvl4Sword, GhostOfGoes, MarkKoz"
+__license__ = "AGPL 3.0"
+__version__ = "0.7.1"
+
 log = logging.getLogger('Killer')
 
 
@@ -47,18 +45,8 @@ def get_killer(args):
         log.debug('Platform: POSIX')
         from killer.killer_posix import KillerPosix
         return KillerPosix(config_path=args.config, debug=args.debug)
-    elif WINDOWS:
-        log.debug('Platform: Windows')
-        from killer.killer_windows import KillerWindows
-        return KillerWindows(config_path=args.config, debug=args.debug)
     else:
-        # TODO: WSL
-        # TODO: OSX
-        # TODO: BSD
-        raise NotImplementedError("Your platform is not currently supported."
-                                  "If you would like support to be added, or "
-                                  "if your platform is supported and this is "
-                                  "a bug, please open an issue on GitHub!")
+        raise NotImplementedError("Your platform is not currently supported.")
 
 
 def parse_args() -> argparse.Namespace:

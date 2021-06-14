@@ -13,6 +13,4 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/agpl.html>.
 
-__author__ = "Lvl4Sword, GhostOfGoes, MarkKoz"
-__license__ = "AGPL 3.0"
-__version__ = "0.7.1"
+

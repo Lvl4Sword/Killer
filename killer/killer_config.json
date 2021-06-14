@@ -7,14 +7,6 @@
     "battery_file": "/sys/class/power_supply/RUN_DEBUG",
     "ethernet_connected_file": "/sys/class/net/RUN_DEBUG/carrier"
   },
-  "windows": {
-    "ethernet_interface": "DE-AD-BE-EF-CA-FE",
-    "usb_id_whitelist": {},
-    "usb_connected_whitelist": {}
-  },
-  "osx": {
-
-  },
   "bluetooth": {
     "paired_whitelist": {
       "DE:AD:BE:EF:CA:FE": "Generic Bluetooth Device"
