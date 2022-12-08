@@ -1,3 +1,5 @@
+This project has moved to [this GoldenSwordLLC repo](https://github.com/GoldenSwordLLC/Killer)
+
 ```
            _  _  _  _ _
           | |/ /(_)| | |
@@ -14,10 +16,6 @@
 (USB, Bluetooth, AC, Battery, Disk Tray, Ethernet)
   Shuts the system down upon disallowed changes.
 ```
-
-
-[![PyPI - Current version](https://img.shields.io/pypi/v/killer.svg)](https://pypi.org/project/killer/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/killer.svg)](https://pypistats.org/packages/killer)
 
 [![Killer Discord Channel](https://img.shields.io/badge/discord-killer_(click)-brightgreen.svg)](https://discord.gg/T5YYvw8AVq)
 [![irc.libera.chat #killer](https://img.shields.io/badge/irc.-libera.chat_killer_(click)-brightgreen.svg)](https://web.libera.chat/?channel=#killer)
